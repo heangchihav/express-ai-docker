@@ -1,30 +1,31 @@
-# Use the latest official Node.js image
-FROM node:latest
+# Stage 1: Build the project
+FROM node:18 AS build
 
-# Set environment variables
-ENV NODE_ENV=production
-
-# Set the working directory in the container
 WORKDIR /app
 
-# Copy package.json and package-lock.json to the container
-COPY package*.json ./
-
-# Install dependencies (use --legacy-peer-deps to resolve potential peer dependency issues)
-RUN npm install --legacy-peer-deps
-RUN npm install -g typescript
-
-# Copy all the application files to the container
 COPY . .
 
-# Rebuild bcrypt dependencies for the container's architecture (e.g., ARM or x86)
-RUN npm rebuild bcrypt --build-from-source
+# Install dependencies and generate Prisma client
+RUN npm install
 
-# Build the TypeScript code (if using TypeScript)
+# Compile TypeScript to JavaScript
 RUN npm run build
 
-# Expose the port the app will run on
+# Stage 2: Run production environment
+FROM node:18 AS production
+
+WORKDIR /app
+
+# Copy only necessary files from the build stage
+COPY --from=build /app/package.json /app/package-lock.json ./
+COPY --from=build /app/node_modules ./node_modules
+COPY --from=build /app/dist ./dist
+
+# Install only production dependencies
+RUN npm prune --production
+
+# Expose the port Express is running on
 EXPOSE 3000
 
-# Start the application
-CMD ["npm", "run", "docker:start"]
+# Command to run the server in production
+CMD ["node", "dist/server.js"]

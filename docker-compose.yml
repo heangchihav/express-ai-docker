@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   db:
-    image: postgres:15 # Use the appropriate PostgreSQL version
+    image: postgres:15 # PostgreSQL version
     container_name: postgres_db
     environment:
       POSTGRES_USER: postgres
@@ -11,40 +11,40 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
     ports:
-      - "5432:5432"
+      - "2004:5432"
     networks:
       - backend_network
 
   expressjs:
     build:
-      context: ./expressjs # Path to Express.js Dockerfile
+      context: ./expressjs
     container_name: expressjs_service
     environment:
-      - NODE_ENV=${NODE_ENV}
-      - DATABASE_URL=${DATABASE_URL}
-      - ACCESS_TOKEN_SECRET=${ACCESS_TOKEN_SECRET}
-      - REFRESH_TOKEN_SECRET=${REFRESH_TOKEN_SECRET}
-      - SESSION_SECRET=${SESSION_SECRET}
-      - SERVER_PORT=${EXPRESS_SERVER_PORT:-3000} # Default to 3000 if not defined
+      NODE_ENV: ${NODE_ENV}
+      DATABASE_URL: ${DATABASE_URL}
+      ACCESS_TOKEN_SECRET: ${ACCESS_TOKEN_SECRET}
+      REFRESH_TOKEN_SECRET: ${REFRESH_TOKEN_SECRET}
+      SESSION_SECRET: ${SESSION_SECRET}
+      SERVER_PORT: ${EXPRESS_SERVER_PORT:-3000}
     ports:
-      - "3000:3000" # Match the Express.js server port
-      - "5555:5555" # Ensure Prisma Studio's default port is mapped
+      - "3000:3000"
+      - "5555:5555"
     depends_on:
       - db
     networks:
       - backend_network
     env_file:
-      - .env # Load root .env
+      - .env # Ensure this line is present to load variables from root .env file
 
   fastapi:
     build:
       context: ./fastapi # Path to FastAPI Dockerfile
     container_name: fastapi_service
     environment:
-      - DATABASE_URL=${DATABASE_URL}
-      - ACCESS_TOKEN_SECRET=${ACCESS_TOKEN_SECRET}
-      - REFRESH_TOKEN_SECRET=${REFRESH_TOKEN_SECRET}
-      - FASTAPI_SERVER_PORT=${FASTAPI_SERVER_PORT:-8000} # Default to 8000 if not defined
+      DATABASE_URL: ${DATABASE_URL}
+      ACCESS_TOKEN_SECRET: ${ACCESS_TOKEN_SECRET}
+      REFRESH_TOKEN_SECRET: ${REFRESH_TOKEN_SECRET}
+      FASTAPI_SERVER_PORT: ${FASTAPI_SERVER_PORT:-8000} # Default to 8000 if not defined
     ports:
       - "8000:8000" # Match the FastAPI server port
     depends_on:
@@ -52,7 +52,7 @@ services:
     networks:
       - backend_network
     env_file:
-      - .env # Load root .env
+      - .env # Load root .env file with all configurations
 
 volumes:
   pgdata:
