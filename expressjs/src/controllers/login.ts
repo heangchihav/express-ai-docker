@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import prisma from "../libs/prisma";
-import { compareSync } from "bcrypt";
+import { compareSync } from "bcryptjs";
 import { BadRequestsError } from "../errors/bad-requests";
 import { ErrorCode } from "../errors/root";
 import { NotFoundError } from "../errors/not-found";

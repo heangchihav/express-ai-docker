@@ -1,4 +1,4 @@
-import express, { Application } from "express";
+import express, { Application, type Request, type Response, type NextFunction } from "express";
 import helmet from "helmet";
 import cookieParser from "cookie-parser";
 import passport from "passport";
@@ -25,6 +25,10 @@ import "./strategies/jwtStrategy";
 import "./strategies/googleStrategy";
 import authMiddleware from "./middlewares/auth";
 import { userControlMiddleware } from "./middlewares/userControlMiddleware";
+
+// Validate environment variables on startup
+import "./config/env.validation";
+
 
 const app: Application = express();
 
@@ -60,6 +64,14 @@ app.use(cookieParser());
 
 // Rate Limiting Middleware
 app.use(limiterMiddleware);
+
+// Security headers
+app.use((req: Request, res: Response, next: NextFunction) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('Content-Security-Policy', "default-src 'self'");
+  next();
+});
 
 // Session Management Middleware
 app.use(sessionMiddleware);
