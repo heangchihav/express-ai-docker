@@ -45,7 +45,7 @@ export const isCountryAllowed = (user: User, ip: string): boolean => {
 
   // If in development mode and geo lookup fails, allow access
   if (!geo) {
-    if (secret.NODE_ENV === "development") {
+    if (secret.nodeEnv === "development") {
       console.warn("Geo lookup failed, but bypassing country check in development mode.");
       return true;
     }

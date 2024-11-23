@@ -26,6 +26,10 @@ services:
       REFRESH_TOKEN_SECRET: ${REFRESH_TOKEN_SECRET}
       SESSION_SECRET: ${SESSION_SECRET}
       SERVER_PORT: ${EXPRESS_SERVER_PORT:-3000}
+      FASTAPI_URL: http://fastapi_service:8000
+    volumes:
+      - ./expressjs:/app
+      - /app/node_modules
     ports:
       - "3000:3000"
       - "5555:5555"

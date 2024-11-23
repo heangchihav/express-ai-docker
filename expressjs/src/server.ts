@@ -56,9 +56,9 @@ if (cluster.isMaster) {
 
   // === Main Server Initialization ===
 
-  httpServer.listen(Number(secret.SERVER_PORT), secret.HOST, () => {
+  httpServer.listen(Number(secret.serverPort), secret.host, () => {
     Logger.info(
-      `Worker ${process.pid} running server at http://${secret.HOST}:${secret.SERVER_PORT}/`
+      `Worker ${process.pid} running server at http://${secret.host}:${secret.serverPort}/`
     );
   });
   // Handle graceful shutdown

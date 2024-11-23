@@ -58,7 +58,7 @@ export const signup = async (req: Request, res: Response) => {
     // Set refresh token in HTTP-only cookie
     res.cookie("refreshToken", `Bearer ${refreshToken}`, {
       httpOnly: true,
-      secure: secret.NODE_ENV === "production",
+      secure: secret.nodeEnv === "production",
       sameSite: "strict",
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });

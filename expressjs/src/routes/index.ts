@@ -7,6 +7,11 @@ import { Request, Response } from "express";
 
 const rootRouter: Router = Router();
 
+// Health check endpoint
+rootRouter.get("/health", (_req: Request, res: Response) => {
+  res.status(200).json({ status: "healthy" });
+});
+
 rootRouter.use("/auth", authRoutes);
 rootRouter.use(logoutRoutes);
 rootRouter.use(refreshRoutes);

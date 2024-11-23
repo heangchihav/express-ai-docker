@@ -4,7 +4,6 @@ import { secret } from '../config/secret';
 
 const googleAuthRoutes: Router = Router();
 
-
 // Redirect to Google for authentication
 googleAuthRoutes.get('/google', passport.authenticate('google', { scope: ['openid', 'profile', 'email'], session: false }));
 
@@ -16,21 +15,24 @@ googleAuthRoutes.get('/google/callback',
     }),
     (req: Request, res: Response) => {
         // Successful authentication
-        const accessToken = req.authInfo?.accessToken;
-        const refreshToken = req.authInfo?.refreshToken;
+        const authInfo = req.authInfo as { accessToken?: string; refreshToken?: string };
+        const accessToken = authInfo?.accessToken;
+        const refreshToken = authInfo?.refreshToken;
+
         // For web clients, set the refresh token in a secure cookie
-        res.cookie("refreshToken", `Bearer ${refreshToken}`, {
-            httpOnly: true,
-            secure: secret.NODE_ENV === 'production', // set to true if using https
-            sameSite: "strict", // adjust according to your needs
-        });
-        //For mobile clients, send the refresh token in the response body
-        //The mobile app should handle storing this token securely
+        if (refreshToken) {
+            res.cookie("refreshToken", `Bearer ${refreshToken}`, {
+                httpOnly: true,
+                secure: secret.nodeEnv === 'production', // set to true if using https
+                sameSite: "strict", // adjust according to your needs
+            });
+        }
+
+        // For mobile clients, send the refresh token in the response body
         res.json({
-            accessToken: `Bearer ${accessToken}`, // for both web and mobile
-            refreshToken: req.body.isMobile ? `Bearer ${refreshToken}` : undefined, // only send if the client is mobile
+            success: true,
+            accessToken: `Bearer ${accessToken}`,
         });
-        res.redirect('/');
     }
 );
 

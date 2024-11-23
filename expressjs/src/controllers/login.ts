@@ -40,7 +40,7 @@ export const login = async (req: Request, res: Response) => {
   // For web clients, set the refresh token in a secure cookie
   res.cookie("refreshToken", `Bearer ${refreshToken}`, {
     httpOnly: true,
-    secure: secret.NODE_ENV === "production", // set to true if using https
+    secure: secret.nodeEnv === "production", // set to true if using https
     sameSite: "strict", // adjust according to your needs
   });
   //For mobile clients, send the refresh token in the response body

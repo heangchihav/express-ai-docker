@@ -29,7 +29,7 @@ export const refresh = async (
   // Verify the refresh token
   const decodedToken = jwt.verify(
     tokenValue,
-    secret.REFRESH_TOKEN_SECRET
+    secret.refreshTokenSecret
   ) as CustomJwtPayload;
 
   // Fetch the associated user from the database
@@ -49,7 +49,7 @@ export const refresh = async (
   // Generate a new access token
   const newAccessToken = jwt.sign(
     { userId: userRefreshToken.userId },
-    secret.ACCESS_TOKEN_SECRET,
+    secret.accessTokenSecret,
     { expiresIn: "1m" }
   );
 
@@ -64,7 +64,7 @@ export const refresh = async (
   // Set the new refresh token in a secure cookie
   res.cookie("refreshToken", `Bearer ${newRefreshToken}`, {
     httpOnly: true,
-    secure: secret.NODE_ENV === "production", // Use true if using https
+    secure: secret.nodeEnv === "production", // Use true if using https
     sameSite: "strict", // Adjust according to your needs
   });
 

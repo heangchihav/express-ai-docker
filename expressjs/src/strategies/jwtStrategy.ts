@@ -1,32 +1,47 @@
-import passport from "passport";
-import { secret } from "../config/secret";
-import prisma from "../libs/prisma";
-import { JwtPayload } from "jsonwebtoken";
-import { VerifiedCallback } from "passport-jwt";
+import { Strategy as JwtStrategy, ExtractJwt } from 'passport-jwt';
+import passport from 'passport';
+import { PrismaClient } from '@prisma/client';
+import { secret } from '../config/secret';
+import Logger from '../config/logger';
 
-const JwtStrategy = require("passport-jwt").Strategy;
-const ExtractJwt = require("passport-jwt").ExtractJwt;
+const prisma = new PrismaClient();
+
+interface JwtPayload {
+    userId: number;
+    iat?: number;
+    exp?: number;
+}
 
 const options = {
-  jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-  secretOrKey: secret.ACCESS_TOKEN_SECRET,
+    jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+    secretOrKey: secret.accessTokenSecret,
+    algorithms: ['HS256'] as const
 };
 
-const verify = async (payload: JwtPayload, done: VerifiedCallback) => {
-  const userId = payload.userId;
-  try {
-    const user = await prisma.user.findFirst({ where: { id: userId } });
-    if (!user) {
-      return done(null, false);
-    }
-    if (user) {
-      return done(null, user);
-    }
-  } catch (error) {
-    return done(error, false);
-  }
-};
+type DoneFunction = (error: any, user?: any, info?: any) => void;
 
-const jwtStrategy = new JwtStrategy(options, verify);
+passport.use(
+    new JwtStrategy(options as any, async (jwt_payload: JwtPayload, done: DoneFunction) => {
+        try {
+            const user = await prisma.user.findUnique({
+                where: { id: jwt_payload.userId }
+            });
 
-passport.use(jwtStrategy);
+            if (user) {
+                Logger.debug('JWT Strategy: User found', {
+                    userId: user.id,
+                    email: user.email
+                });
+                return done(null, user);
+            }
+
+            Logger.warn('JWT Strategy: User not found', {
+                userId: jwt_payload.userId
+            });
+            return done(null, false);
+        } catch (error) {
+            Logger.error('JWT Strategy: Error', { error });
+            return done(error as Error, false);
+        }
+    })
+);

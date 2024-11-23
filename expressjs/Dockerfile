@@ -11,14 +11,19 @@ WORKDIR /app
 # Copy package files and prisma schema first
 COPY package.json ./
 COPY prisma ./prisma/
+COPY tsconfig.json ./
 
-# Install dependencies and clean up
+# Install dependencies, nodemon, typescript, ts-node and clean up
 RUN npm install && \
+    npm install -g nodemon typescript ts-node && \
     npm cache clean --force && \
     rm -rf /tmp/* ~/.npm
 
 # Copy application code
 COPY . .
+
+# Generate Prisma client
+RUN npx prisma generate
 
 # Set proper permissions
 RUN chown -R appuser:appuser /app
@@ -28,10 +33,7 @@ USER appuser
 
 # Define healthcheck
 HEALTHCHECK --interval=30s --timeout=3s \
-    CMD node -e "require('http').get('http://localhost:3000/health', (r) => r.statusCode === 200 ? process.exit(0) : process.exit(1))"
+  CMD curl -f http://localhost:3000/health || exit 1
 
-# Set Node to production
-ENV NODE_ENV=production
-
-# Start the application
-CMD ["npm", "start"]
+# Start the application with ts-node
+CMD ["nodemon", "--exec", "ts-node", "src/server.ts"]

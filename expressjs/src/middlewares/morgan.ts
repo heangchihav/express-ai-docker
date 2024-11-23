@@ -8,7 +8,7 @@ const stream: StreamOptions = {
 };
 
 // Skip logging in non-development environments
-const skip = () => secret.NODE_ENV !== 'development';
+const skip = () => secret.nodeEnv !== 'development';
 
 // Morgan middleware setup
 const morganMiddleware = morgan(
