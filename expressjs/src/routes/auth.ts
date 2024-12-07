@@ -2,7 +2,7 @@ import { Router } from 'express'
 import { signup } from '../controllers/signup'
 import { login } from '../controllers/login'
 import googleAuthRoutes from './google';
-import { errorHandler } from '../error-handler';
+import { errorHandler } from '../middlewares/error/errorHandler';
 const authRoutes: Router = Router();
 
 authRoutes.post('/signup',errorHandler(signup) );

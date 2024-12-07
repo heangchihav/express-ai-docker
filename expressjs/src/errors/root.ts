@@ -11,32 +11,35 @@ export interface ErrorResponse {
 }
 
 export enum ErrorCode {
-    // Authentication Errors (1000-1999)
-    INVALID_CREDENTIALS = 1000,
-    TOKEN_EXPIRED = 1001,
-    INVALID_TOKEN = 1002,
-    UNAUTHORIZED = 1003,
-    USERNAME_EXISTS = 1004,
-    USER_NOT_FOUND = 1005,
-    INCORRECT_PASSWORD = 1006,
-    FORBIDDEN = 1007,
-
-    // Validation Errors (2000-2999)
-    VALIDATION_ERROR = 2000,
-    INVALID_INPUT = 2001,
-    MISSING_REQUIRED_FIELD = 2002,
-    UNPROCESSABLE_ENTITY = 2003,
-
-    // Database Errors (3000-3999)
-    DATABASE_ERROR = 3000,
-    RECORD_NOT_FOUND = 3001,
-    DUPLICATE_ENTRY = 3002,
-
-    // Server Errors (5000-5999)
-    INTERNAL_SERVER_ERROR = 5000,
-    SERVICE_UNAVAILABLE = 5001,
-    NOT_FOUND = 5002,
-    INTERNAL_ERROR = 5003
+    // Authentication & Authorization
+    UNAUTHORIZED = 'UNAUTHORIZED',
+    FORBIDDEN = 'FORBIDDEN',
+    INVALID_TOKEN = 'INVALID_TOKEN',
+    TOKEN_EXPIRED = 'TOKEN_EXPIRED',
+    USER_NOT_FOUND = 'USER_NOT_FOUND',
+    INCORRECT_PASSWORD = 'INCORRECT_PASSWORD',
+    USERNAME_EXISTS = 'USERNAME_EXISTS',
+    
+    // Resource Errors
+    NOT_FOUND = 'NOT_FOUND',
+    DUPLICATE_ENTRY = 'DUPLICATE_ENTRY',
+    VALIDATION_ERROR = 'VALIDATION_ERROR',
+    UNPROCESSABLE_ENTITY = 'UNPROCESSABLE_ENTITY',
+    BAD_REQUEST = 'BAD_REQUEST',
+    
+    // Server Errors
+    INTERNAL_SERVER_ERROR = 'INTERNAL_SERVER_ERROR',
+    INTERNAL_ERROR = 'INTERNAL_ERROR',
+    DATABASE_ERROR = 'DATABASE_ERROR',
+    SERVICE_UNAVAILABLE = 'SERVICE_UNAVAILABLE',
+    
+    // Rate Limiting
+    TOO_MANY_REQUESTS = 'TOO_MANY_REQUESTS',
+    
+    // Security
+    CSRF_TOKEN_MISSING = 'CSRF_TOKEN_MISSING',
+    CSRF_TOKEN_INVALID = 'CSRF_TOKEN_INVALID',
+    SUSPICIOUS_ACTIVITY = 'SUSPICIOUS_ACTIVITY'
 }
 
 export class HttpError extends Error {
@@ -52,23 +55,36 @@ export class HttpError extends Error {
         this.errors = errors;
 
         // Set HTTP status code based on error code range
-        const code = Number(errorCode);
-        if (code >= 1000 && code <= 1999) {
-            this.statusCode = 401; // Authentication errors
-            if (errorCode === ErrorCode.FORBIDDEN) {
-                this.statusCode = 403;
-            }
-        } else if (code >= 2000 && code <= 2999) {
-            this.statusCode = 400; // Validation errors
-            if (errorCode === ErrorCode.UNPROCESSABLE_ENTITY) {
-                this.statusCode = 422;
-            }
-        } else if (code >= 3000 && code <= 3999) {
-            this.statusCode = 404; // Database errors
-        } else if (code >= 5000 && code <= 5999) {
-            this.statusCode = 500; // Server errors
-        } else {
-            this.statusCode = 500; // Default to server error
+        switch (errorCode) {
+            case ErrorCode.UNAUTHORIZED:
+            case ErrorCode.FORBIDDEN:
+            case ErrorCode.INVALID_TOKEN:
+            case ErrorCode.TOKEN_EXPIRED:
+                this.statusCode = 401; // Authentication errors
+                break;
+            case ErrorCode.VALIDATION_ERROR:
+            case ErrorCode.NOT_FOUND:
+            case ErrorCode.DUPLICATE_ENTRY:
+            case ErrorCode.UNPROCESSABLE_ENTITY:
+            case ErrorCode.BAD_REQUEST:
+                this.statusCode = 400; // Resource errors
+                break;
+            case ErrorCode.INTERNAL_SERVER_ERROR:
+            case ErrorCode.INTERNAL_ERROR:
+            case ErrorCode.DATABASE_ERROR:
+            case ErrorCode.SERVICE_UNAVAILABLE:
+                this.statusCode = 500; // Server errors
+                break;
+            case ErrorCode.TOO_MANY_REQUESTS:
+                this.statusCode = 429; // Rate limiting
+                break;
+            case ErrorCode.CSRF_TOKEN_MISSING:
+            case ErrorCode.CSRF_TOKEN_INVALID:
+            case ErrorCode.SUSPICIOUS_ACTIVITY:
+                this.statusCode = 403; // Security
+                break;
+            default:
+                this.statusCode = 500; // Default to server error
         }
 
         Error.captureStackTrace(this, this.constructor);

@@ -1,5 +1,66 @@
 ---
 
+### Error Handling System
+
+The application implements a robust two-layer error handling system:
+
+#### **1. Route-Level Error Handler**
+The first layer catches and standardizes errors from route handlers:
+
+```typescript
+// Example usage in routes
+authRoutes.post('/login', errorHandler(login));
+```
+
+This handler:
+- Catches all errors from route handlers
+- Logs detailed error information
+- Converts various error types to standardized HttpError instances
+- Supports different error types:
+  - Validation errors (Zod)
+  - CSRF token errors
+  - Database errors
+  - Custom application errors
+  - Unknown errors
+
+#### **2. Global Error Handler**
+The second layer provides consistent error responses across the application:
+
+- **Development Environment:**
+  ```json
+  {
+    "message": "Detailed error message",
+    "errorCode": 400,
+    "statusCode": 400,
+    "timestamp": "2023-XX-XX...",
+    "path": "/api/resource",
+    "stack": "Error stack trace...",
+    "details": { /* Additional error context */ }
+  }
+  ```
+
+- **Production Environment:**
+  ```json
+  {
+    "message": "User-friendly error message",
+    "errorCode": 400,
+    "statusCode": 400,
+    "timestamp": "2023-XX-XX...",
+    "path": "/api/resource"
+  }
+  ```
+
+#### **Error Types**
+The system handles various error types with specific error codes:
+- `400`: Bad Request
+- `401`: Unauthorized
+- `403`: Forbidden (including CSRF errors)
+- `404`: Not Found
+- `422`: Validation Error
+- `500`: Internal Server Error
+
+---
+
 ### Step-by-Step Guide for Authentication and Token Management
 
 #### **1. Retrieve CSRF Token**

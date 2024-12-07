@@ -1,70 +1,63 @@
 import http from "http";
-import cluster from "cluster";
-import os from "os";
 import { Server } from "socket.io";
 import Logger from "./config/logger";
-import { secret } from "./config/secret";
 import app from "./app";
 import prisma from "./libs/prisma";
+import { secret } from "./config/secret";
 
-// Get the number of CPUs
-const numCPUs = os.cpus().length;
+const port = secret.serverPort || 3000;
+const host = secret.host || 'localhost';
 
-if (cluster.isMaster) {
-  // Master process
-  Logger.info(`Master process is running on PID: ${process.pid}`);
+async function startServer() {
+    try {
+        // Test database connection
+        await prisma.$connect();
+        Logger.info('Database connection established');
 
-  // Fork workers
-  for (let i = 0; i < numCPUs; i++) {
-    cluster.fork();
-  }
+        const httpServer = http.createServer(app);
+        
+        // Configure Socket.IO
+        const io = new Server(httpServer, {
+            cors: {
+                origin: secret.corsOrigins,
+                methods: ["GET", "POST"],
+                credentials: true
+            },
+        });
 
-  cluster.on("exit", (worker, code, signal) => {
-    Logger.error(
-      `Worker ${worker.process.pid} died with code: ${code}, and signal: ${signal}`
-    );
-    Logger.info("Starting a new worker");
-    cluster.fork();
-  });
-} else {
-  // Worker processes
-  const httpServer = http.createServer(app);
-  const io = new Server(httpServer, {
-    cors: {
-      origin: "*", // Adjust this according to your CORS policy
-      methods: ["GET", "POST"],
-    },
-  });
+        // Socket.IO event handlers
+        io.on("connection", (socket) => {
+            Logger.info(`Client connected: ${socket.id}`);
 
-  // === Socket.IO Handling ===
+            socket.on("message", (data) => {
+                Logger.debug("Message received:", data);
+                socket.emit("message", data);
+            });
 
-  io.on("connection", (socket) => {
-    console.log("A user connected");
+            socket.on("disconnect", () => {
+                Logger.info(`Client disconnected: ${socket.id}`);
+            });
+        });
 
-    // Handle custom events
-    socket.on("message", (data) => {
-      console.log("Message received:", data);
-      // Echo the message back to the client
-      socket.emit("message", data);
-    });
+        // Start the server
+        httpServer.listen(port, () => {
+            Logger.info(`🚀 Server running at http://${host}:${port} in ${secret.nodeEnv} mode`);
+            Logger.info('Press CTRL-C to stop');
+        });
 
-    // Handle disconnection
-    socket.on("disconnect", () => {
-      console.log("User disconnected");
-    });
-  });
-
-  // === Main Server Initialization ===
-
-  httpServer.listen(Number(secret.serverPort), secret.host, () => {
-    Logger.info(
-      `Worker ${process.pid} running server at http://${secret.host}:${secret.serverPort}/`
-    );
-  });
-  // Handle graceful shutdown
-  process.on("SIGINT", async () => {
-    console.log("Shutting down...");
-    await prisma.$disconnect();
-    process.exit(0);
-  });
+        // Handle shutdown
+        process.on('SIGTERM', () => {
+            Logger.info('SIGTERM received. Shutting down gracefully...');
+            httpServer.close(async () => {
+                await prisma.$disconnect();
+                Logger.info('Server closed');
+                process.exit(0);
+            });
+        });
+    } catch (error) {
+        Logger.error('Failed to start server:', error);
+        process.exit(1);
+    }
 }
+
+startServer();

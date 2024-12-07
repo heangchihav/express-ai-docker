@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   db:
     image: postgres:15 # PostgreSQL version
@@ -11,7 +9,7 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
     ports:
-      - "2004:5432"
+      - "5432:5432"
     networks:
       - backend_network
 
@@ -27,6 +25,7 @@ services:
       SESSION_SECRET: ${SESSION_SECRET}
       SERVER_PORT: ${EXPRESS_SERVER_PORT:-3000}
       FASTAPI_URL: http://fastapi_service:8000
+      REDIS_URL: redis://redis_service:6379
     volumes:
       - ./expressjs:/app
       - /app/node_modules
@@ -35,6 +34,7 @@ services:
       - "5555:5555"
     depends_on:
       - db
+      - redis
     networks:
       - backend_network
     env_file:
@@ -57,6 +57,14 @@ services:
       - backend_network
     env_file:
       - .env # Load root .env file with all configurations
+
+  redis:
+    image: redis:alpine
+    container_name: redis_service
+    ports:
+      - "6379:6379"
+    networks:
+      - backend_network
 
 volumes:
   pgdata:

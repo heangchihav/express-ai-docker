@@ -1,56 +1,46 @@
+"""
+FastAPI Main Application
+
+This is the main entry point for the FastAPI application.
+"""
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from .config.settings import settings
-from .middleware.security import SecurityMiddleware
-from .api.v1.endpoints import security
-import logging
-import uvicorn
-
-# Configure logging
-logging.basicConfig(
-    level=settings.LOG_LEVEL,
-    format=settings.LOG_FORMAT
-)
-logger = logging.getLogger(__name__)
+from src.core.config import get_settings
+from src.api.v1.security.router import router as security_router
+from src.api.v1.health.router import router as health_router
 
 def create_app() -> FastAPI:
-    """Create and configure the FastAPI application"""
+    """Create and configure the FastAPI application."""
+    settings = get_settings()
+    
     app = FastAPI(
         title=settings.PROJECT_NAME,
-        description="High-security FastAPI service with ML-powered anomaly detection",
-        version=settings.VERSION,
-        docs_url="/api/docs",
-        redoc_url="/api/redoc",
-        openapi_url="/api/openapi.json"
+        openapi_url=f"{settings.API_V1_PREFIX}/openapi.json" if settings.DEBUG else None,
+        docs_url="/docs" if settings.DEBUG else None,
+        redoc_url="/redoc" if settings.DEBUG else None,
     )
-    
+
     # Add CORS middleware
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=settings.CORS_ORIGINS,
+        allow_origins=[str(settings.EXPRESS_SERVER_URL)],
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
     )
-    
-    # Add security middleware
-    app.add_middleware(SecurityMiddleware)
-    
+
     # Include routers
     app.include_router(
-        security.router,
-        prefix=f"{settings.API_V1_STR}/security",
-        tags=["security"]
+        security_router,
+        prefix=settings.API_V1_PREFIX
     )
     
+    app.include_router(
+        health_router,
+        prefix=settings.API_V1_PREFIX
+    )
+
     return app
 
 app = create_app()
-
-if __name__ == "__main__":
-    uvicorn.run(
-        "main:app",
-        host=settings.HOST,
-        port=settings.PORT,
-        reload=settings.DEBUG
-    )

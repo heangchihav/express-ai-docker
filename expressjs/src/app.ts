@@ -1,115 +1,136 @@
-import express, { Application} from "express";
-import helmet from "helmet";
-import cookieParser from "cookie-parser";
-import passport from "passport";
-import bodyParser from "body-parser";
-import xssClean from "xss-clean";
-import hpp from "hpp";
-import path from "path";
-import * as expressWinston from "express-winston";
-import cors from "cors";
-
-// Import configuration and routes
-import { corsOptions } from "./config/corsOption";
-import morganMiddleware from "./middlewares/morgan";
-import Logger, { errorLogger } from "./config/logger";
-import csrfProtection from "./middlewares/csrf";
-import { compressionMiddleware } from "./middlewares/compression";
-import { limiterMiddleware } from "./middlewares/limiter";
-import { sessionMiddleware } from "./middlewares/session";
-import { mlSecurityMiddleware } from "./fastAPIMiddlewares/mlSecurity";
-import rootRouter from "./routes";
-import { errorMiddleware } from "./middlewares/errors";
+import express, { Express, Response, Request, NextFunction } from 'express';
+import path from 'path';
+import * as expressWinston from 'express-winston';
+import Logger from './config/logger';
+import rootRouter from './routes';
+import {
+    configureBasicMiddlewares,
+    configureLoggingMiddlewares,
+    configureSecurityMiddlewares,
+    configureErrorHandling,
+    configureAuthMiddlewares
+} from './middlewares';
+import { ServeStaticOptions } from 'serve-static';
+import { ServerResponse } from 'http';
 
 // Initialize authentication strategies
-import "./strategies/jwtStrategy";
-import "./strategies/googleStrategy";
-import authMiddleware from "./middlewares/auth";
+import './strategies/jwtStrategy';
+import './strategies/googleStrategy';
+import { secret } from './config/secret';
 
-// Validate environment variables on startup
-import "./config/env.validation";
+/**
+ * Express application setup with security-first middleware configuration
+ */
+class App {
+    private readonly _app: Express;
 
-const app: Application = express();
+    constructor() {
+        this._app = express();
+        this.configureMiddlewares();
+    }
 
-// === Middleware ===
+    /**
+     * Get the configured Express application instance
+     */
+    public get app(): Express {
+        return this._app;
+    }
 
-// Security Middleware
-app.use(helmet({
-    contentSecurityPolicy: {
-        directives: {
-            defaultSrc: ["'self'"],
-            scriptSrc: ["'self'", "'unsafe-inline'"],
-            styleSrc: ["'self'", "'unsafe-inline'"],
-            imgSrc: ["'self'", 'data:', 'https:'],
-            connectSrc: ["'self'", process.env.SECURITY_SERVICE_URL || 'http://localhost:8000'],
-        },
-    },
-    crossOriginEmbedderPolicy: true,
-    crossOriginOpenerPolicy: true,
-    crossOriginResourcePolicy: true,
-    dnsPrefetchControl: true,
-    frameguard: true,
-    hidePoweredBy: true,
-    hsts: true,
-    ieNoOpen: true,
-    noSniff: true,
-    referrerPolicy: true,
-    xssFilter: true
-}));
-app.use(xssClean());
-app.use(hpp());
+    /**
+     * Configure application middleware in the correct order
+     * Order is important for security and functionality
+     * 
+     * 1. Health checks (no middleware)
+     * 2. Basic middleware (compression, cookies, cors)
+     * 3. Logging middleware
+     * 4. Security middleware
+     * 5. Authentication middleware
+     * 6. Static files
+     * 7. Routes
+     * 8. Error handling
+     */
+    private configureMiddlewares(): void {
+        // Health check endpoints (before any middleware)
+        this.configureHealthChecks();
 
-// ML-powered security middleware
-app.use(mlSecurityMiddleware);
+        // Basic middlewares (compression, cookies, cors)
+        configureBasicMiddlewares(this._app);
 
-// Rate limiting
-app.use(limiterMiddleware);
+        // Logging (before security to log all requests)
+        configureLoggingMiddlewares(this._app);
+        
+        // Winston error logging
+        this.configureWinstonErrorLogging();
 
-// Compression Middleware
-app.use(compressionMiddleware);
+        // Security middlewares (after logging, before routes)
+        configureSecurityMiddlewares(this._app);
 
-// CORS Middleware
-app.use(cors(corsOptions));
+        // Authentication middlewares
+        configureAuthMiddlewares(this._app);
 
-// Request Logging Middleware
-app.use(morganMiddleware);
-app.use(expressWinston.logger({
-    winstonInstance: Logger,
-    meta: true,
-    msg: "HTTP {{req.method}} {{req.url}}",
-    expressFormat: true,
-    colorize: true
-}));
+        // Static files (after security checks)
+        this.configureStaticFiles();
 
-// Body parsing Middleware
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use(cookieParser());
-app.use(bodyParser.json());
+        // API routes
+        this.configureRoutes();
 
-// Session Middleware
-app.use(sessionMiddleware);
+        // Error handling (must be last)
+        configureErrorHandling(this._app);
+    }
 
-// Initialize Passport
-app.use(passport.initialize());
-app.use(passport.session());
+    /**
+     * Configure health check endpoints
+     * These endpoints should be accessible without any middleware
+     */
+    private configureHealthChecks(): void {
+        this._app.get('/healthcheck', (_req: Request, res: Response) => {
+            res.status(200).json({ status: 'healthy' });
+        });
+    }
 
-// Apply Authentication Middleware
-app.use(authMiddleware);
+    /**
+     * Configure Winston error logging
+     */
+    private configureWinstonErrorLogging(): void {
+        this._app.use(expressWinston.errorLogger({
+            winstonInstance: Logger,
+            msg: 'HTTP {{req.method}} {{req.url}} {{res.statusCode}} {{res.responseTime}}ms',
+            meta: true,
+            requestWhitelist: secret.nodeEnv === 'production' 
+                ? ['url', 'method', 'httpVersion', 'originalUrl', 'query']
+                : ['url', 'headers', 'method', 'httpVersion', 'originalUrl', 'query', 'body']
+        }));
+    }
 
-// CSRF Protection
-app.use(csrfProtection);
+    /**
+     * Configure static file serving
+     */
+    private configureStaticFiles(): void {
+        const options: ServeStaticOptions = {
+            dotfiles: 'ignore',
+            etag: true,
+            maxAge: '1d',
+            redirect: false,
+            setHeaders: (res: ServerResponse) => {
+                res.setHeader('X-Content-Type-Options', 'nosniff');
+                res.setHeader('X-Frame-Options', 'DENY');
+                res.setHeader('X-XSS-Protection', '1; mode=block');
+            }
+        };
 
-// Serve static files
-app.use(express.static(path.join(__dirname, "../public")));
+        // Ensure public directory exists
+        const publicPath = path.join(__dirname, 'public');
+        this._app.use(express.static(publicPath, options));
+    }
 
-// === Routes ===
-app.use("/api", rootRouter);
+    /**
+     * Configure API routes
+     */
+    private configureRoutes(): void {
+        this._app.use('/api', rootRouter);
+    }
+}
 
-// === Error Handling ===
-app.use(errorMiddleware);
-app.use(expressWinston.errorLogger({
-    winstonInstance: errorLogger
-}));
-
+// Create and export a single instance of the application
+const app = new App().app;
 export default app;

@@ -6,61 +6,52 @@ import Logger from '../config/logger';
 
 const prisma = new PrismaClient();
 
-// Google OAuth Strategy
-const googleStrategyConfig = {
-    clientID: secret.googleClientId,
-    clientSecret: secret.googleClientSecret,
-    callbackURL: secret.googleCallbackUrl,
+// Google OAuth Strategy configuration
+passport.use(new GoogleStrategy({
+    clientID: secret.googleClientId || '',
+    clientSecret: secret.googleClientSecret || '',
+    callbackURL: secret.callbackUrl,
     scope: ['profile', 'email']
-};
-
-passport.use(
-    new GoogleStrategy(
-        googleStrategyConfig,
-        async (accessToken: string, refreshToken: string, profile: Profile, done: VerifyCallback) => {
-            try {
-                // Check if user exists
-                const existingUser = await prisma.user.findFirst({
-                    where: { 
-                        OR: [
-                            { email: profile.emails?.[0]?.value },
-                            { googleId: profile.id }
-                        ]
-                    }
-                });
-
-                if (existingUser) {
-                    Logger.debug('Google Strategy: Existing user found', {
-                        userId: existingUser.id,
-                        email: existingUser.email
-                    });
-                    return done(null, existingUser);
-                }
-
-                // Create new user if doesn't exist
-                const newUser = await prisma.user.create({
-                    data: {
-                        email: profile.emails?.[0]?.value || null,
-                        name: profile.displayName || null,
-                        googleId: profile.id,
-                        role: Role.USER,
-                        username: profile.emails?.[0]?.value?.split('@')[0] || null
-                    }
-                });
-
-                Logger.info('Google Strategy: New user created', {
-                    userId: newUser.id,
-                    email: newUser.email
-                });
-
-                return done(null, newUser);
-            } catch (error) {
-                Logger.error('Google Strategy: Error', { error });
-                return done(error as Error, undefined);
+}, async (accessToken: string, refreshToken: string, profile: Profile, done: VerifyCallback) => {
+    try {
+        // Check if user exists
+        const existingUser = await prisma.user.findFirst({
+            where: { 
+                OR: [
+                    { email: profile.emails?.[0]?.value },
+                    { googleId: profile.id }
+                ]
             }
+        });
+
+        if (existingUser) {
+            // Update existing user's Google ID if not set
+            if (!existingUser.googleId) {
+                await prisma.user.update({
+                    where: { id: existingUser.id },
+                    data: { googleId: profile.id }
+                });
+            }
+            return done(null, existingUser);
         }
-    )
-);
+
+        // Create new user if doesn't exist
+        const newUser = await prisma.user.create({
+            data: {
+                email: profile.emails?.[0]?.value || '',
+                googleId: profile.id,
+                name: profile.displayName,
+                role: Role.USER,
+                
+            }
+        });
+
+        return done(null, newUser);
+    } catch (error) {
+        Logger.error('Error in Google authentication:', error);
+        return done(error as Error);
+    }
+}));
 
 // Serialize user for the session
 passport.serializeUser((user: any, done) => {

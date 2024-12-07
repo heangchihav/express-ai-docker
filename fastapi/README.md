@@ -1,129 +1,105 @@
 # FastAPI Security Service
 
-A high-security FastAPI microservice with ML-powered anomaly detection and advanced security features.
-
-## Features
-
-- 🛡️ ML-powered anomaly detection
-- 🔒 Advanced request pattern analysis
-- 📊 Real-time risk scoring
-- 🚫 Automatic IP blocking
-- 📝 Comprehensive logging
-- ⚡ High performance middleware
-- 🔄 CORS support
-- 🌐 RESTful API endpoints
+This service provides security analysis for Express.js applications using FastAPI and machine learning.
 
 ## Project Structure
 
 ```
 fastapi/
-├── src/
-│   ├── api/
+├── src/                      # Source code
+│   ├── api/                  # API endpoints
 │   │   └── v1/
-│   │       └── endpoints/
-│   │           └── security.py
-│   ├── config/
-│   │   └── settings.py
-│   ├── core/
-│   │   └── security/
-│   │       ├── models.py
-│   │       └── service.py
-│   ├── middleware/
-│   │   └── security.py
-│   └── main.py
-├── tests/
-├── .env
-├── .env.example
-├── requirements.txt
-└── README.md
+│   │       └── security/     # Security endpoints
+│   ├── core/                 # Core functionality
+│   │   ├── config.py        # Configuration
+│   │   └── dependencies.py   # FastAPI dependencies
+│   ├── schemas/             # Data models
+│   │   └── security.py      # Security schemas
+│   ├── services/            # Business logic
+│   │   └── security.py      # Security service
+│   └── main.py             # FastAPI app initialization
+├── main.py                  # Application entry point
+├── requirements.txt         # Python dependencies
+├── Dockerfile              # Docker configuration
+└── .env                    # Environment variables
 ```
 
-## Installation
+## Features
+
+- Express.js request analysis
+- Security threat detection
+- API key authentication
+- CORS protection
+- Request validation
+- Suspicious path detection
+- Body size limits
+- Header analysis
+
+## Setup
 
 1. Clone the repository
-2. Create a virtual environment:
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # Linux/Mac
-   .\venv\Scripts\activate   # Windows
-   ```
-3. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
-4. Copy `.env.example` to `.env` and configure your settings:
+2. Copy `.env.example` to `.env` and fill in the values:
    ```bash
    cp .env.example .env
    ```
 
-## Configuration
+3. Install dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-The service is highly configurable through environment variables:
+4. Run the application:
+   ```bash
+   python main.py
+   ```
 
-- `DEBUG`: Enable/disable debug mode
-- `HOST`: Server host
-- `PORT`: Server port
-- `SECRET_KEY`: Secret key for security features
-- `RISK_SCORE_THRESHOLD`: Threshold for suspicious activity
-- `MAX_SUSPICIOUS_COUNT`: Maximum allowed suspicious activities
-- `REQUEST_WINDOW_SECONDS`: Time window for request analysis
-- `RESET_WINDOW_SECONDS`: Time window for resetting counters
-- `RATE_LIMIT`: Rate limit per minute
-- `CORS_ORIGINS`: Allowed CORS origins
-- `LOG_LEVEL`: Logging level
+## Docker Setup
 
-## Running the Service
+1. Build the image:
+   ```bash
+   docker build -t fastapi-security .
+   ```
 
-Development:
-```bash
-cd src
-uvicorn main:app --reload
-```
+2. Run the container:
+   ```bash
+   docker run -p 8000:8000 --env-file .env fastapi-security
+   ```
 
-Production:
-```bash
-cd src
-uvicorn main:app --host 0.0.0.0 --port 8000
-```
+## Express.js Integration
+
+1. Set environment variables in Express.js:
+   ```env
+   FASTAPI_URL=http://fastapi:8000
+   FASTAPI_KEY=your_api_key_here
+   ```
+
+2. Use the security middleware:
+   ```typescript
+   import SecurityCheckMiddleware from './fastAPIMiddlewares/securityCheck';
+   app.use(SecurityCheckMiddleware);
+   ```
 
 ## API Documentation
 
-Once running, access the API documentation at:
-- Swagger UI: `http://localhost:8000/api/docs`
-- ReDoc: `http://localhost:8000/api/redoc`
+When `DEBUG=True`, access the API documentation at:
+- Swagger UI: http://localhost:8000/docs
+- ReDoc: http://localhost:8000/redoc
 
-## Security Features
+## Security Checks
 
-### ML-Powered Anomaly Detection
-- Real-time request pattern analysis
-- Feature extraction from request patterns
-- TensorFlow-based risk scoring
+The service performs the following security checks:
+1. Request body size validation
+2. Suspicious header detection
+3. Suspicious path detection
+4. Origin verification
+5. API key validation
 
-### Request Analysis
-- IP-based tracking
-- Pattern recognition
-- Suspicious activity detection
-- Automatic IP blocking
+## Contributing
 
-### Security Headers
-- Request ID tracking
-- Risk score exposure
-- Standard security headers
-
-## Development
-
-### Code Style
-```bash
-black .
-isort .
-mypy .
-```
-
-### Testing
-```bash
-pytest
-```
+1. Create a feature branch
+2. Make your changes
+3. Submit a pull request
 
 ## License
 
-MIT License - see LICENSE file for details
+MIT License
