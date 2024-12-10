@@ -26,7 +26,9 @@ COPY . .
 RUN npx prisma generate
 
 # Set proper permissions
-RUN chown -R appuser:appuser /app
+RUN mkdir -p /app/logs && \
+    chown -R appuser:appuser /app && \
+    chmod -R 755 /app/logs
 
 # Use non-root user
 USER appuser

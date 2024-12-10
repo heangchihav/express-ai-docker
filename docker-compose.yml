@@ -29,6 +29,7 @@ services:
     volumes:
       - ./expressjs:/app
       - /app/node_modules
+      - express_logs:/app/logs
     ports:
       - "3000:3000"
       - "5555:5555"
@@ -68,6 +69,7 @@ services:
 
 volumes:
   pgdata:
+  express_logs:
 
 
 networks:
