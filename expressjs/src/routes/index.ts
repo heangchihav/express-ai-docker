@@ -3,6 +3,7 @@ import authRoutes from "./auth";
 import refreshRoutes from "./refresh";
 import logoutRoutes from "./logout";
 import csrfTokenRoutes from "./csrf-token";
+import testRoutes from "./test.routes";  // Add this line
 import { secret } from "../config/secret";
 
 const rootRouter: Router = Router();
@@ -45,6 +46,7 @@ rootRouter.use("/auth", authRoutes);
 rootRouter.use(logoutRoutes);
 rootRouter.use(refreshRoutes);
 rootRouter.use(csrfTokenRoutes);
+rootRouter.use("/test", testRoutes);  // Add this line
 
 // Protected route example
 rootRouter.post("/protected", (req: Request, res: Response) => {

@@ -1,6 +1,7 @@
 import winston from 'winston';
 import path from 'path';
 import { secret } from './secret';
+import * as LogstashTransport from 'winston-logstash';
 
 // Define log levels with priorities
 const levels = {
@@ -49,8 +50,20 @@ const fileFormat = winston.format.combine(
 // Create logs directory if it doesn't exist
 const logsDir = path.join(process.cwd(), 'logs');
 
-// Set up transports for logging to console and separate files by level
-const transports = [
+// Create Logstash transport with retry options
+const logstashOptions: LogstashTransport.LogstashOptions = {
+  port: 5000,
+  host: 'logstash',
+  node_name: 'expressjs',
+  ssl_enable: false,
+  max_connect_retries: -1, // -1 for infinite retries
+  timeout_connect_retries: 1000, // Time to wait between retries in ms
+  retries: 2, // Number of times to retry per connection attempt
+  transport: LogstashTransport.TransportType.Tcp // Use TCP instead of UDP
+};
+
+// Set up base transports for logging to console and files
+const baseTransports: winston.transport[] = [
   new winston.transports.Console({
     format: consoleFormat,
     level: level()
@@ -70,8 +83,31 @@ const transports = [
 const Logger = winston.createLogger({
   level: level(),
   levels,
-  transports
+  format: winston.format.combine(
+    winston.format.timestamp(),
+    winston.format.json()
+  ),
+  transports: baseTransports
 });
+
+// Add Logstash transport separately with error handling
+try {
+  const logstashTransport = new LogstashTransport.Logstash(logstashOptions);
+  
+  // Handle connection errors
+  logstashTransport.on('error', (err) => {
+    console.error('Logstash connection error:', err);
+  });
+
+  // Handle successful connection
+  logstashTransport.on('connect', () => {
+    console.log('Successfully connected to Logstash');
+  });
+
+  Logger.add(logstashTransport as unknown as winston.transport);
+} catch (error) {
+  console.error('Error setting up Logstash transport:', error);
+}
 
 // Create error logger for express-winston
 export const errorLogger = winston.createLogger({

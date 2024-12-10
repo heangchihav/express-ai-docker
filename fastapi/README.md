@@ -1,105 +1,132 @@
-# FastAPI Security Service
+# FastAPI Service
 
-This service provides security analysis for Express.js applications using FastAPI and machine learning.
+This is a FastAPI service that provides AI processing capabilities and integrates with Express.js.
 
 ## Project Structure
 
 ```
 fastapi/
-├── src/                      # Source code
-│   ├── api/                  # API endpoints
+├── src/
+│   ├── api/
 │   │   └── v1/
-│   │       └── security/     # Security endpoints
-│   ├── core/                 # Core functionality
-│   │   ├── config.py        # Configuration
-│   │   └── dependencies.py   # FastAPI dependencies
-│   ├── schemas/             # Data models
-│   │   └── security.py      # Security schemas
-│   ├── services/            # Business logic
-│   │   └── security.py      # Security service
-│   └── main.py             # FastAPI app initialization
-├── main.py                  # Application entry point
-├── requirements.txt         # Python dependencies
-├── Dockerfile              # Docker configuration
-└── .env                    # Environment variables
+│   │       ├── health/
+│   │       └── security/
+│   ├── core/
+│   │   ├── config.py
+│   │   └── logger.py
+│   ├── middleware/
+│   │   └── logging.py
+│   ├── schemas/
+│   ├── services/
+│   └── main.py
+├── main.py
+├── requirements.txt
+└── Dockerfile
 ```
 
 ## Features
 
-- Express.js request analysis
-- Security threat detection
-- API key authentication
-- CORS protection
-- Request validation
-- Suspicious path detection
-- Body size limits
-- Header analysis
+- **API Versioning**: Routes are versioned under `/api/v1`
+- **Security**: JWT-based authentication and authorization
+- **Logging**: Structured logging with ELK stack integration
+- **Health Checks**: Endpoint monitoring and status checks
+- **CORS**: Configured for Express.js integration
+- **Environment Configuration**: Flexible settings management
+- **Docker Support**: Containerized deployment
+- **Type Safety**: Full type hints and Pydantic models
+- **API Documentation**: Automatic OpenAPI/Swagger docs
 
-## Setup
+## Getting Started
 
-1. Clone the repository
-2. Copy `.env.example` to `.env` and fill in the values:
-   ```bash
-   cp .env.example .env
-   ```
+### Prerequisites
 
-3. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
+- Python 3.11+
+- Docker and Docker Compose
+- Access to ELK stack services
 
-4. Run the application:
-   ```bash
-   python main.py
-   ```
+### Environment Variables
 
-## Docker Setup
+Create a `.env` file in the root directory:
 
-1. Build the image:
-   ```bash
-   docker build -t fastapi-security .
-   ```
+```env
+# Server Configuration
+DEBUG=true
+PORT=8000
+API_V1_PREFIX=/api/v1
 
-2. Run the container:
-   ```bash
-   docker run -p 8000:8000 --env-file .env fastapi-security
-   ```
+# Security
+ACCESS_TOKEN_SECRET=your_access_token_secret
+REFRESH_TOKEN_SECRET=your_refresh_token_secret
 
-## Express.js Integration
+# Express.js Integration
+EXPRESS_SERVER_URL=http://localhost:3000
 
-1. Set environment variables in Express.js:
-   ```env
-   FASTAPI_URL=http://fastapi:8000
-   FASTAPI_KEY=your_api_key_here
-   ```
+# Logging
+LOGSTASH_HOST=logstash
+LOGSTASH_PORT=5000
+```
 
-2. Use the security middleware:
-   ```typescript
-   import SecurityCheckMiddleware from './fastAPIMiddlewares/securityCheck';
-   app.use(SecurityCheckMiddleware);
-   ```
+### Running with Docker
+
+```bash
+# Build and start the services
+docker-compose up --build
+
+# Access the API documentation
+open http://localhost:8000/docs
+```
+
+### Development
+
+```bash
+# Install dependencies
+pip install -r requirements.txt
+
+# Run the development server
+python main.py
+```
 
 ## API Documentation
 
-When `DEBUG=True`, access the API documentation at:
-- Swagger UI: http://localhost:8000/docs
-- ReDoc: http://localhost:8000/redoc
+When running in development mode, you can access:
+- Swagger UI: `http://localhost:8000/docs`
+- ReDoc: `http://localhost:8000/redoc`
+- OpenAPI JSON: `http://localhost:8000/api/v1/openapi.json`
 
-## Security Checks
+## Logging
 
-The service performs the following security checks:
-1. Request body size validation
-2. Suspicious header detection
-3. Suspicious path detection
-4. Origin verification
-5. API key validation
+The application uses structured logging that integrates with the ELK stack:
+
+- Logs are sent to both console and Logstash
+- JSON format for better searchability
+- Request/response logging middleware
+- Application events tracking
+- Error tracking with stack traces
+
+View logs in Kibana at `http://localhost:5601`
+
+## Health Checks
+
+The service provides health check endpoints:
+- `GET /health`: Basic application health
+- `GET /api/v1/health`: Detailed system status
+
+## Integration with Express.js
+
+This FastAPI service is designed to work alongside an Express.js application:
+- Shared authentication
+- CORS configuration
+- Consistent logging
+- Health monitoring
 
 ## Contributing
 
-1. Create a feature branch
-2. Make your changes
-3. Submit a pull request
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
 ## License
 
-MIT License
+This project is licensed under the MIT License.

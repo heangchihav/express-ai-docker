@@ -12,6 +12,12 @@ services:
       - "5432:5432"
     networks:
       - backend_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
 
   expressjs:
     build:
@@ -29,17 +35,24 @@ services:
     volumes:
       - ./expressjs:/app
       - /app/node_modules
-      - express_logs:/app/logs
+      - ./expressjs/logs:/app/logs
     ports:
       - "3000:3000"
       - "5555:5555"
     depends_on:
       - db
       - redis
+      - logstash
     networks:
       - backend_network
     env_file:
       - .env # Ensure this line is present to load variables from root .env file
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
 
   fastapi:
     build:
@@ -50,14 +63,23 @@ services:
       ACCESS_TOKEN_SECRET: ${ACCESS_TOKEN_SECRET}
       REFRESH_TOKEN_SECRET: ${REFRESH_TOKEN_SECRET}
       FASTAPI_SERVER_PORT: ${FASTAPI_SERVER_PORT:-8000} # Default to 8000 if not defined
+      LOGSTASH_HOST: logstash
+      LOGSTASH_PORT: 5000
     ports:
       - "8000:8000" # Match the FastAPI server port
     depends_on:
       - db
+      - logstash
     networks:
       - backend_network
     env_file:
       - .env # Load root .env file with all configurations
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
 
   redis:
     image: redis:alpine
@@ -66,11 +88,94 @@ services:
       - "6379:6379"
     networks:
       - backend_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.1
+    container_name: elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms256m -Xmx256m"  # Reduced memory usage
+      - "cluster.routing.allocation.disk.threshold_enabled=false"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    ports:
+      - "9200:9200"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    networks:
+      - backend_network
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:9200/_cluster/health | grep -q '\"status\":\"green\"\\|\"status\":\"yellow\"'"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  logstash:
+    image: docker.elastic.co/logstash/logstash:8.11.1
+    container_name: logstash
+    volumes:
+      - ./elk/logstash/pipeline:/usr/share/logstash/pipeline
+      - ./elk/logstash/config/logstash.yml:/usr/share/logstash/config/logstash.yml
+    ports:
+      - "5000:5000"
+    environment:
+      LS_JAVA_OPTS: "-Xmx256m -Xms256m"  # Reduced memory usage
+    depends_on:
+      - elasticsearch
+    networks:
+      - backend_network
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9600 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.11.1
+    container_name: kibana
+    ports:
+      - "5601:5601"
+    environment:
+      - ELASTICSEARCH_URL=http://elasticsearch:9200
+      - "NODE_OPTIONS=--max-old-space-size=256"  # Reduced memory usage
+    depends_on:
+      - elasticsearch
+    networks:
+      - backend_network
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:5601/api/status | grep -q '\"status\":{\"overall\":{\"level\":\"available\"'"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
 volumes:
   pgdata:
-  express_logs:
-
+  elasticsearch_data:
 
 networks:
   backend_network:
