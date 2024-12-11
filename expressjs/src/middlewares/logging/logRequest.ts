@@ -1,5 +1,4 @@
-import { NextFunction, Request, Response } from "express";
-import { User } from "@prisma/client";
+import { Request, Response, NextFunction } from "express";
 import Logger from "../../config/logger";
 import { extractUserIP } from "../../helpers/extractUserIP";
 import { extractUserAgentDetails } from "../../helpers/extractUserAgentDetails";
@@ -12,11 +11,11 @@ export const logRequest = async (
     next: NextFunction
 ) => {
     try {
+        const user = (req as any).user;
         const userAgent = req.headers["user-agent"] || "Unknown";
         const userIP = extractUserIP(req);
         const { device, os, browser } = extractUserAgentDetails(userAgent);
-        const { latitude, longitude } = req.body;
-        const user = req.user as User;
+        const { latitude, longitude } = req.query;
         const requestedRoute = req.originalUrl || req.url || "Unknown";
         const method = req.method;
         let statusCode: number;
@@ -34,7 +33,6 @@ export const logRequest = async (
                     responseBody = JSON.stringify(sanitizeSensitiveInfo(body));
                 }
             } catch (error) {
-                responseBody = "Error sanitizing response body";
                 Logger.error("Error sanitizing response body:", error);
             }
 
@@ -43,12 +41,12 @@ export const logRequest = async (
         };
 
         // Log the request and response details after the response is finished
-        res.on("finish", async () => {
+        res.on("finish", () => {
             try {
                 Logger.info({
                     ipAddress: userIP,
-                    latitude: latitude ? parseFloat(latitude) : undefined,
-                    longitude: longitude ? parseFloat(longitude) : undefined,
+                    latitude: latitude ? parseFloat(latitude as string) : undefined,
+                    longitude: longitude ? parseFloat(longitude as string) : undefined,
                     userAgent,
                     device,
                     os,

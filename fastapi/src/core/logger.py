@@ -1,57 +1,55 @@
 import logging
-import socket
 import json
+import socket
+from datetime import datetime
 from logging.handlers import SocketHandler
 from typing import Any, Dict
-import os
 
 class LogstashFormatter(logging.Formatter):
     def __init__(self):
         super(LogstashFormatter, self).__init__()
 
     def format(self, record: logging.LogRecord) -> str:
-        message: Dict[str, Any] = {}
-
-        # Add basic fields
-        message.update({
-            '@timestamp': self.formatTime(record),
+        message = {
+            '@timestamp': datetime.utcnow().isoformat(),
+            'type': 'fastapi',
+            'service': 'fastapi-app',
             'level': record.levelname,
-            'logger': record.name,
+            'host': socket.gethostname(),
             'path': record.pathname,
-            'type': 'fastapi'
-        })
+            'line_number': record.lineno,
+            'function': record.funcName,
+            'message': record.getMessage()
+        }
 
-        # Add exception info if present
-        if record.exc_info:
-            message['exception'] = self.formatException(record.exc_info)
-
-        # Add the message
-        if isinstance(record.msg, dict):
-            message.update(record.msg)
-        else:
-            message['message'] = record.getMessage()
-
-        # Add extra fields
         if hasattr(record, 'props'):
             message.update(record.props)
 
+        if record.exc_info:
+            message['exception'] = self.formatException(record.exc_info)
+
         return json.dumps(message)
 
-class LogstashHandler(SocketHandler):
-    def __init__(self, host: str, port: int):
-        super(LogstashHandler, self).__init__(host, port)
-        self.formatter = LogstashFormatter()
+class CustomLogger(logging.Logger):
+    def __init__(self, name: str, level: int = logging.NOTSET):
+        super().__init__(name, level)
+        self.props: Dict[str, Any] = {}
 
-    def makeSocket(self) -> socket.socket:
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.connect((self.host, self.port))
-        return s
+    def _log(self, level: int, msg: str, args: tuple, exc_info=None, extra=None, **kwargs):
+        if extra is None:
+            extra = {}
+        if 'props' in extra:
+            props = extra.pop('props')
+            if isinstance(props, dict):
+                extra['props'] = {**self.props, **props}
+        super()._log(level, msg, args, exc_info, extra, **kwargs)
 
-def setup_logger() -> logging.Logger:
-    logger = logging.getLogger("fastapi")
+def setup_logging():
+    logging.setLoggerClass(CustomLogger)
+    logger = logging.getLogger('fastapi')
     logger.setLevel(logging.INFO)
 
-    # Console handler
+    # Console Handler
     console_handler = logging.StreamHandler()
     console_handler.setLevel(logging.INFO)
     console_formatter = logging.Formatter(
@@ -60,17 +58,11 @@ def setup_logger() -> logging.Logger:
     console_handler.setFormatter(console_formatter)
     logger.addHandler(console_handler)
 
-    # Logstash handler
-    logstash_host = os.getenv('LOGSTASH_HOST', 'logstash')
-    logstash_port = int(os.getenv('LOGSTASH_PORT', 5000))
-    
-    try:
-        logstash_handler = LogstashHandler(logstash_host, logstash_port)
-        logger.addHandler(logstash_handler)
-    except Exception as e:
-        logger.error(f"Failed to connect to Logstash: {e}")
+    # Logstash Handler
+    logstash_handler = SocketHandler('logstash', 5000)
+    logstash_handler.setFormatter(LogstashFormatter())
+    logger.addHandler(logstash_handler)
 
     return logger
 
-# Create logger instance
-logger = setup_logger()
+logger = setup_logging()

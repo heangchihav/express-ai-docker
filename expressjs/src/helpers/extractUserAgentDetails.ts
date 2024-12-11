@@ -1,5 +1,4 @@
-
-import UAParser from "ua-parser-js";
+import { UAParser } from "ua-parser-js";
 
 // Extract user agent details (device, OS, browser)
 export const extractUserAgentDetails = (userAgent: string) => {
@@ -14,4 +13,3 @@ export const extractUserAgentDetails = (userAgent: string) => {
     device
   };
 };
-

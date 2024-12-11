@@ -32,6 +32,8 @@ services:
       SERVER_PORT: ${EXPRESS_SERVER_PORT:-3000}
       FASTAPI_URL: http://fastapi_service:8000
       REDIS_URL: redis://redis_service:6379
+      LOGSTASH_HOST: logstash
+      LOGSTASH_PORT: 5000
     volumes:
       - ./expressjs:/app
       - /app/node_modules
@@ -65,6 +67,9 @@ services:
       FASTAPI_SERVER_PORT: ${FASTAPI_SERVER_PORT:-8000} # Default to 8000 if not defined
       LOGSTASH_HOST: logstash
       LOGSTASH_PORT: 5000
+      REDIS_URL: redis://redis_service:6379
+    volumes:
+      - ./fastapi:/app
     ports:
       - "8000:8000" # Match the FastAPI server port
     depends_on:
@@ -102,22 +107,31 @@ services:
       - discovery.type=single-node
       - xpack.security.enabled=false
       - bootstrap.memory_lock=true
-      - "ES_JAVA_OPTS=-Xms256m -Xmx256m"  # Reduced memory usage
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
       - "cluster.routing.allocation.disk.threshold_enabled=false"
+      - path.data=/usr/share/elasticsearch/data
+      - path.logs=/usr/share/elasticsearch/logs
+      - path.repo=/usr/share/elasticsearch/repo
+      - node.store.allow_mmap=false
     ulimits:
       memlock:
         soft: -1
         hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
     ports:
       - "9200:9200"
     volumes:
       - elasticsearch_data:/usr/share/elasticsearch/data
+      - elasticsearch_logs:/usr/share/elasticsearch/logs
+      - elasticsearch_repo:/usr/share/elasticsearch/repo
     networks:
       - backend_network
     deploy:
       resources:
         limits:
-          memory: 512M
+          memory: 1G
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "curl -s http://localhost:9200/_cluster/health | grep -q '\"status\":\"green\"\\|\"status\":\"yellow\"'"]
@@ -129,8 +143,9 @@ services:
     image: docker.elastic.co/logstash/logstash:8.11.1
     container_name: logstash
     volumes:
+      - ./elk/logstash/config:/usr/share/logstash/config
       - ./elk/logstash/pipeline:/usr/share/logstash/pipeline
-      - ./elk/logstash/config/logstash.yml:/usr/share/logstash/config/logstash.yml
+      - ./elk/logstash/templates:/usr/share/logstash/templates
     ports:
       - "5000:5000"
     environment:
@@ -156,19 +171,19 @@ services:
     ports:
       - "5601:5601"
     environment:
-      - ELASTICSEARCH_URL=http://elasticsearch:9200
-      - "NODE_OPTIONS=--max-old-space-size=256"  # Reduced memory usage
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+      - NODE_OPTIONS=--max-old-space-size=2048
+    deploy:
+      resources:
+        limits:
+          memory: 2G
     depends_on:
       - elasticsearch
     networks:
       - backend_network
-    deploy:
-      resources:
-        limits:
-          memory: 512M
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "curl -s http://localhost:5601/api/status | grep -q '\"status\":{\"overall\":{\"level\":\"available\"'"]
+      test: ["CMD-SHELL", "curl -s http://localhost:5601/api/status | grep -q 'Looking good'"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -176,6 +191,8 @@ services:
 volumes:
   pgdata:
   elasticsearch_data:
+  elasticsearch_logs:
+  elasticsearch_repo:
 
 networks:
   backend_network:

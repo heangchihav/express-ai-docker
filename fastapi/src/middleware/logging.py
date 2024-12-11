@@ -1,10 +1,9 @@
 import time
 from typing import Callable
-from fastapi import Request, Response
+from fastapi import FastAPI, Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.types import ASGIApp
-
-from app.core.logger import logger
+from src.core.logger import logger
 
 class LoggingMiddleware(BaseHTTPMiddleware):
     def __init__(self, app: ASGIApp):
@@ -18,7 +17,6 @@ class LoggingMiddleware(BaseHTTPMiddleware):
         path = request.url.path
         query_params = dict(request.query_params)
         client_host = request.client.host if request.client else None
-
         response = None
         try:
             response = await call_next(request)

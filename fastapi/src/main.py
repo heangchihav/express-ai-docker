@@ -1,6 +1,4 @@
 """
-FastAPI Main Application
-
 This is the main entry point for the FastAPI application.
 """
 
@@ -11,24 +9,26 @@ from src.core.logger import logger
 from src.middleware.logging import LoggingMiddleware
 from src.api.v1.security.router import router as security_router
 from src.api.v1.health.router import router as health_router
+from src.api.v1.test.router import router as test_router
 
 def create_app() -> FastAPI:
     """Create and configure the FastAPI application."""
     settings = get_settings()
-    
+
+    # Initialize FastAPI app
     app = FastAPI(
         title=settings.PROJECT_NAME,
-        description="FastAPI service for AI processing",
-        version="1.0.0",
-        openapi_url=f"{settings.API_V1_PREFIX}/openapi.json" if settings.DEBUG else None,
-        docs_url="/docs" if settings.DEBUG else None,
-        redoc_url="/redoc" if settings.DEBUG else None,
+        version=settings.VERSION,
+        description=settings.DESCRIPTION,
+        docs_url=settings.DOCS_URL,
+        redoc_url=settings.REDOC_URL,
+        debug=settings.DEBUG
     )
 
-    # Add CORS middleware
+    # Configure CORS
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=[str(settings.EXPRESS_SERVER_URL)],
+        allow_origins=settings.CORS_ORIGINS,
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
@@ -40,18 +40,18 @@ def create_app() -> FastAPI:
     # Include routers
     app.include_router(
         security_router,
-        prefix=settings.API_V1_PREFIX
+        prefix="/api/v1"
     )
     
     app.include_router(
         health_router,
-        prefix=settings.API_V1_PREFIX
+        prefix="/api/v1"
     )
-
-    # Health check endpoint
-    @app.get("/health")
-    async def health_check():
-        return {"status": "healthy"}
+    
+    app.include_router(
+        test_router,
+        prefix="/api/v1"
+    )
 
     @app.on_event("startup")
     async def startup_event():
@@ -61,17 +61,16 @@ def create_app() -> FastAPI:
             "settings": {
                 "project_name": settings.PROJECT_NAME,
                 "debug": settings.DEBUG,
-                "api_prefix": settings.API_V1_PREFIX
+                "api_prefix": settings.API_V1_PREFIX,
             }
         })
-
     @app.on_event("shutdown")
     async def shutdown_event():
         logger.info({
             "event": "shutdown",
             "message": "FastAPI application shutting down"
         })
-
+        
     return app
 
 app = create_app()
