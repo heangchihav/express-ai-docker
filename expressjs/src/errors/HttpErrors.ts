@@ -1,5 +1,6 @@
-import { ErrorCode } from './root';
+import { ErrorCode } from './ErrorTypes';
 
+// Base HTTP Error class
 export class HttpError extends Error {
     public statusCode: number;
     public errorCode: ErrorCode;
@@ -18,8 +19,18 @@ export class HttpError extends Error {
         this.errors = errors;
         Error.captureStackTrace(this, this.constructor);
     }
+
+    toJSON() {
+        return {
+            statusCode: this.statusCode,
+            errorCode: this.errorCode,
+            message: this.message,
+            errors: this.errors,
+        };
+    }
 }
 
+// 4xx Client Errors
 export class BadRequestError extends HttpError {
     constructor(message: string = 'Bad Request', errors?: any[]) {
         super(400, ErrorCode.BAD_REQUEST, message, errors);
@@ -62,6 +73,7 @@ export class TooManyRequestsError extends HttpError {
     }
 }
 
+// 5xx Server Errors
 export class InternalServerError extends HttpError {
     constructor(message: string = 'Internal server error') {
         super(500, ErrorCode.INTERNAL_SERVER_ERROR, message);
@@ -69,13 +81,20 @@ export class InternalServerError extends HttpError {
 }
 
 export class DatabaseError extends HttpError {
-    constructor(message: string = 'Database operation failed') {
-        super(500, ErrorCode.DATABASE_ERROR, message);
+    constructor(message: string = 'Database operation failed', errors?: any[]) {
+        super(500, ErrorCode.DATABASE_ERROR, message, errors);
     }
 }
 
 export class ServiceUnavailableError extends HttpError {
     constructor(message: string = 'Service unavailable') {
         super(503, ErrorCode.SERVICE_UNAVAILABLE, message);
+    }
+}
+
+// Security Errors
+export class CsrfError extends HttpError {
+    constructor(message: string = 'CSRF token validation failed') {
+        super(403, ErrorCode.CSRF_TOKEN_INVALID, message);
     }
 }

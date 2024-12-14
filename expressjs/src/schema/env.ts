@@ -35,38 +35,46 @@ export const envSchema = z.object({
         message: "SESSION_SECRET must be at least 32 characters long"
     }),
 
-    // Google OAuth Settings
-    GOOGLE_CLIENT_ID: z.string().optional(),
-    GOOGLE_CLIENT_SECRET: z.string().optional(),
-    CALLBACK_URL: z.string().url({
-        message: "CALLBACK_URL must be a valid URL"
-    }).optional(),
+    // Google OAuth
+    GOOGLE_CLIENT_ID: z.string().min(1, {
+        message: "GOOGLE_CLIENT_ID is required"
+    }),
+    GOOGLE_CLIENT_SECRET: z.string().min(1, {
+        message: "GOOGLE_CLIENT_SECRET is required"
+    }),
+    CALLBACK_URL: z.string().url().optional(),
 
     // FastAPI Integration
     FASTAPI_URL: z.string().url({
         message: "FASTAPI_URL must be a valid URL"
-    }).default('http://localhost:8000'),
-    FASTAPI_KEY: z.string().optional(),
-    RISK_THRESHOLD: z.string().regex(/^\d*\.?\d+$/, {
+    }),
+    FASTAPI_KEY: z.string().min(1, {
+        message: "FASTAPI_KEY is required"
+    }),
+    RISK_THRESHOLD: z.string().regex(/^\d+(\.\d+)?$/, {
         message: "RISK_THRESHOLD must be a valid number"
-    }).transform(val => parseFloat(val)).default('0.7'),
+    }).transform(val => parseFloat(val)).default('0.5'),
     WHITELISTED_IPS: z.string().default(''),
 
     // CORS Settings
-    CORS_ORIGINS: z.string().min(1, {
-        message: "CORS_ORIGINS is required. Provide comma-separated list of allowed origins"
-    }),
-    ALLOWED_METHODS: z.string().min(1, {
-        message: "ALLOWED_METHODS is required. Provide comma-separated list of allowed HTTP methods"
-    }),
+    CORS_ORIGINS: z.string().default('*'),
+    ALLOWED_METHODS: z.string().default('GET,HEAD,PUT,PATCH,POST,DELETE'),
 
     // Rate Limiting
     RATE_LIMIT_WINDOW_MS: z.string().regex(/^\d+$/, {
-        message: "RATE_LIMIT_WINDOW_MS must be a valid number in milliseconds"
+        message: "RATE_LIMIT_WINDOW_MS must be a valid number"
     }).transform(val => parseInt(val, 10)).default('900000'),
     RATE_LIMIT_MAX: z.string().regex(/^\d+$/, {
         message: "RATE_LIMIT_MAX must be a valid number"
     }).transform(val => parseInt(val, 10)).default('100'),
+
+    // Logstash Configuration
+    LOGSTASH_HOST: z.string().min(1, {
+        message: "LOGSTASH_HOST is required"
+    }).default('localhost'),
+    LOGSTASH_PORT: z.string().regex(/^\d+$/, {
+        message: "LOGSTASH_PORT must be a valid port number"
+    }).transform(val => parseInt(val, 10)).default('5000'),
 });
 
 // Type inference for environment variables

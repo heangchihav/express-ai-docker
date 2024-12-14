@@ -53,4 +53,10 @@ export const secret = {
     // Rate Limiting
     rateLimitWindowMs: env.RATE_LIMIT_WINDOW_MS,
     rateLimitMax: env.RATE_LIMIT_MAX,
+
+    // Logstash Configuration
+    logstash: {
+        host: env.LOGSTASH_HOST,
+        port: env.LOGSTASH_PORT
+    }
 } as const;

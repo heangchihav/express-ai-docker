@@ -1,6 +1,6 @@
-import { RequestHandler } from 'express';
 import { logRequest } from './logRequest';
 import { morganMiddleware as morgan } from './morgan';
+import { MiddlewareFunction } from 'src/types/middleware';
 
-export const logRequestMiddleware: RequestHandler = logRequest;
-export const morganMiddleware: RequestHandler = morgan;
+export const logRequestMiddleware: MiddlewareFunction = logRequest;
+export const morganMiddleware: MiddlewareFunction = morgan;

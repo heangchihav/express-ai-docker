@@ -1,8 +1,7 @@
 import { Request, Response } from "express";
 import prisma from "../libs/prisma";
 import { hash } from "bcryptjs";
-import { BadRequestsError } from "../errors/bad-requests";
-import { ErrorCode } from "../errors/root";
+import { BadRequestError } from "../errors/HttpErrors";
 import { SignUpSchema } from "../schema/signUp";
 import { generateAccessToken } from "../helpers/generateAccessToken";
 import { generateRefreshToken } from "../helpers/generateRefreshToken";
@@ -23,10 +22,7 @@ export const signup = async (req: Request, res: Response) => {
     });
 
     if (existingUser) {
-      throw new BadRequestsError(
-        "Username already exists",
-        ErrorCode.USERNAME_EXISTS
-      );
+      throw new BadRequestError("Username already exists");
     }
 
     // Use a consistent salt rounds value and handle bcrypt more efficiently
@@ -70,6 +66,10 @@ export const signup = async (req: Request, res: Response) => {
       refreshToken: req.body.isMobile ? `Bearer ${refreshToken}` : undefined,
     });
   } catch (error) {
-    throw error;
+    if (error instanceof Error) {
+      throw error;
+    } else {
+      throw new Error("An unknown error occurred");
+    }
   }
 };

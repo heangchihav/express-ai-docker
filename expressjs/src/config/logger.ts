@@ -2,6 +2,7 @@ import winston from 'winston';
 import path from 'path';
 import { secret } from './secret';
 import fs from 'fs';
+import { LogstashTransport } from 'winston-logstash-transport';
 
 // Define log levels with priorities
 const levels = {
@@ -61,6 +62,18 @@ const baseTransports: winston.transport[] = [
   new winston.transports.File({
     filename: path.join(logsDir, 'combined.log'),
     format: fileFormat
+  }),
+  // Add Logstash Transport
+  new LogstashTransport({
+    host: secret.logstash.host,
+    port: secret.logstash.port,
+    ssl_enable: false,
+    max_connect_retries: -1,
+    timeout_connect_retries: 1000,
+    metadata: {
+      service: 'expressjs',
+      environment: secret.nodeEnv
+    }
   })
 ];
 
@@ -91,6 +104,19 @@ export const errorLogger = winston.createLogger({
         winston.format.timestamp(),
         winston.format.json()
       )
+    }),
+    // Add Logstash Transport for errors
+    new LogstashTransport({
+      host: secret.logstash.host,
+      port: secret.logstash.port,
+      ssl_enable: false,
+      max_connect_retries: -1,
+      timeout_connect_retries: 1000,
+      metadata: {
+        service: 'expressjs',
+        type: 'error',
+        environment: secret.nodeEnv
+      }
     })
   ]
 });

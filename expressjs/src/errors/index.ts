@@ -1,5 +1,5 @@
-export * from './root';
-export * from './http';
+export * from './ErrorTypes';
+export * from './HttpErrors';
 
 // Re-export common error classes for convenience
 export {
@@ -14,4 +14,5 @@ export {
     InternalServerError,
     DatabaseError,
     ServiceUnavailableError,
-} from './http';
+    CsrfError,
+} from './HttpErrors';

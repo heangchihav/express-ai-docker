@@ -1,7 +1,6 @@
-import { NextFunction, Request, Response } from "express";
-import { UnauthorizedError } from "../../errors/unauthorized";
-import { ErrorCode } from "../../errors/root";
-import { User } from "@prisma/client";
+import { Request, Response, NextFunction } from 'express';
+import { UnauthorizedError } from '../../errors/HttpErrors';
+import { User } from '@prisma/client';
 
 export const adminMiddleware = async (req: Request, res: Response, next: NextFunction) => {
     const user = req.user as User;
@@ -9,7 +8,6 @@ export const adminMiddleware = async (req: Request, res: Response, next: NextFun
         next();
     }
     else {
-        next(new UnauthorizedError('Unauthorized', ErrorCode.UNAUTHORIZED));
+        next(new UnauthorizedError('Admin access required'));
     }
 };
-

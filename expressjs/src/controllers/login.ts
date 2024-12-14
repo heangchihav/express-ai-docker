@@ -1,9 +1,7 @@
 import { Request, Response } from "express";
 import prisma from "../libs/prisma";
 import { compareSync } from "bcryptjs";
-import { BadRequestsError } from "../errors/bad-requests";
-import { ErrorCode } from "../errors/root";
-import { NotFoundError } from "../errors/not-found";
+import { BadRequestError, NotFoundError } from "../errors/HttpErrors";
 import { LoginSchema } from "../schema/login";
 import { generateAccessToken } from "../helpers/generateAccessToken";
 import { generateRefreshToken } from "../helpers/generateRefreshToken";
@@ -21,13 +19,10 @@ export const login = async (req: Request, res: Response) => {
     where: { username: username },
   });
   if (!foundUser) {
-    throw new NotFoundError("User not found.", ErrorCode.USER_NOT_FOUND);
+    throw new NotFoundError("User not found");
   }
   if (!compareSync(password, foundUser.passwordHash!)) {
-    throw new BadRequestsError(
-      "Incorrect password",
-      ErrorCode.INCORRECT_PASSWORD
-    );
+    throw new BadRequestError("Incorrect password");
   }
   const accessToken = generateAccessToken(foundUser);
   const hashedRefreshToken = await prisma.refreshToken.create({

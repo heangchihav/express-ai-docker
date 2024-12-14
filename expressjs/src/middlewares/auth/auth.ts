@@ -1,5 +1,6 @@
 import { NextFunction, Request, Response } from "express";
-import { ErrorCode } from "../../errors/root";
+import { ErrorCode } from "../../errors/ErrorTypes";
+import { UnauthorizedError } from "../../errors/HttpErrors";
 import passport from "passport";
 
 // List of routes that do not require authentication
@@ -24,9 +25,10 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction) 
     }
 
     if (!user) {
-      return res.status(401).json({
-        message: "You must be logged in to access this resource",
-        code: ErrorCode.UNAUTHORIZED
+      const unauthorizedError = new UnauthorizedError("You must be logged in to access this resource");
+      return res.status(unauthorizedError.statusCode).json({
+        message: unauthorizedError.message,
+        code: unauthorizedError.errorCode
       });
     }
 

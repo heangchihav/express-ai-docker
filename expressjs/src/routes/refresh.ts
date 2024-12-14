@@ -1,8 +1,8 @@
 import { Router } from 'express'
 import { refresh } from '../controllers/refresh';
-import { errorHandler } from '../middlewares/error/errorHandler';
+import { asyncErrorHandler } from '../middlewares/error/ErrorMiddleware';
 const refreshRoutes: Router = Router();
 
-refreshRoutes.post('/refresh', errorHandler(refresh));
+refreshRoutes.post('/refresh', asyncErrorHandler(refresh));
 
 export default refreshRoutes;

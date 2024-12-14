@@ -1,10 +1,10 @@
-import { RequestHandler } from 'express';
 import { adminMiddleware as admin } from './admin';
 import { allowDeviceMiddleware as allowDevice } from './allowDevice';
 import { authMiddleware as auth } from './auth';
 import { sessionMiddleware as session } from './session';
+import { MiddlewareFunction } from 'src/types/middleware';
 
-export const adminMiddleware: RequestHandler = admin;
-export const allowDeviceMiddleware: RequestHandler = allowDevice;
-export const authMiddleware: RequestHandler = auth;
-export const sessionMiddleware: RequestHandler = session;
+export const adminMiddleware: MiddlewareFunction = admin;
+export const allowDeviceMiddleware: MiddlewareFunction = allowDevice;
+export const authMiddleware: MiddlewareFunction = auth;
+export const sessionMiddleware: MiddlewareFunction = session;
