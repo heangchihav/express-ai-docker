@@ -1,0 +1,37 @@
+filebeat.inputs:
+  - type: log
+    enabled: true
+    paths:
+      - /app/fastAPI/logs/*.log  # Path to FastAPI logs
+    exclude_files: ['\.gz$', '\.tmp$']  # Exclude rotated or temp files
+    fields:
+      service: fastapi-app
+      environment: production
+    fields_under_root: true
+
+processors:
+  - add_host_metadata: ~         # Enrich logs with host metadata
+  - add_cloud_metadata: ~        # Enrich logs with cloud metadata (if applicable)
+  - add_docker_metadata: ~       # Enrich logs with Docker metadata (if applicable)
+
+output.logstash:
+  hosts: ["logstash:5044"]        # Send logs to Logstash
+
+# Enable monitoring for Filebeat itself
+xpack.monitoring.enabled: true
+xpack.monitoring.elasticsearch:
+  hosts: ["https://es01:9200", "https://es02:9200", "https://es03:9200"]
+  username: "elastic"
+  password: "changeme"
+  ssl:
+    certificate_authorities: ["/usr/share/filebeat/certs/ca.crt"]  # Path to CA certificate
+
+# Logging configuration for debugging
+logging:
+  level: debug                    # Enable debug logging for troubleshooting
+  to_files: true                  # Write logs to files
+  files:
+    path: /usr/share/filebeat/logs
+    name: filebeat
+    keepfiles: 7
+    permissions: 0644

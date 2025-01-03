@@ -5,7 +5,7 @@ This module contains FastAPI dependencies for authentication and authorization.
 """
 
 from fastapi import Request, HTTPException, status, Depends
-from .config import Settings, get_settings
+from .config import Config as Settings, get_settings
 
 async def verify_express_origin(
     request: Request,

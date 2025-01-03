@@ -1,68 +1,33 @@
 import logging
-import json
-import socket
-from datetime import datetime
-from logging.handlers import SocketHandler
-from typing import Any, Dict
+import os
+from pythonjsonlogger import jsonlogger
 
-class LogstashFormatter(logging.Formatter):
-    def __init__(self):
-        super(LogstashFormatter, self).__init__()
+# Ensure the logs directory exists
+LOG_DIR = os.path.join(os.getcwd(), "logs")
+if not os.path.exists(LOG_DIR):
+    os.makedirs(LOG_DIR)
 
-    def format(self, record: logging.LogRecord) -> str:
-        message = {
-            '@timestamp': datetime.utcnow().isoformat(),
-            'type': 'fastapi',
-            'service': 'fastapi-app',
-            'level': record.levelname,
-            'host': socket.gethostname(),
-            'path': record.pathname,
-            'line_number': record.lineno,
-            'function': record.funcName,
-            'message': record.getMessage()
-        }
+# Create a logger
+logger = logging.getLogger("fastapi")
+logger.setLevel(logging.INFO)
 
-        if hasattr(record, 'props'):
-            message.update(record.props)
+# File handler to write logs to logs/app.log
+file_handler = logging.FileHandler(os.path.join(LOG_DIR, "app.log"))
+file_handler.setLevel(logging.INFO)
 
-        if record.exc_info:
-            message['exception'] = self.formatException(record.exc_info)
+# JSON formatter for logs
+json_formatter = jsonlogger.JsonFormatter(
+    '%(asctime)s %(levelname)s %(name)s %(message)s'
+)
+file_handler.setFormatter(json_formatter)
 
-        return json.dumps(message)
+# Add the file handler to the logger
+logger.addHandler(file_handler)
 
-class CustomLogger(logging.Logger):
-    def __init__(self, name: str, level: int = logging.NOTSET):
-        super().__init__(name, level)
-        self.props: Dict[str, Any] = {}
+# Console handler for debugging
+console_handler = logging.StreamHandler()
+console_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
+logger.addHandler(console_handler)
 
-    def _log(self, level: int, msg: str, args: tuple, exc_info=None, extra=None, **kwargs):
-        if extra is None:
-            extra = {}
-        if 'props' in extra:
-            props = extra.pop('props')
-            if isinstance(props, dict):
-                extra['props'] = {**self.props, **props}
-        super()._log(level, msg, args, exc_info, extra, **kwargs)
-
-def setup_logging():
-    logging.setLoggerClass(CustomLogger)
-    logger = logging.getLogger('fastapi')
-    logger.setLevel(logging.INFO)
-
-    # Console Handler
-    console_handler = logging.StreamHandler()
-    console_handler.setLevel(logging.INFO)
-    console_formatter = logging.Formatter(
-        '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-    )
-    console_handler.setFormatter(console_formatter)
-    logger.addHandler(console_handler)
-
-    # Logstash Handler
-    logstash_handler = SocketHandler('logstash', 5000)
-    logstash_handler.setFormatter(LogstashFormatter())
-    logger.addHandler(logstash_handler)
-
-    return logger
-
-logger = setup_logging()
+# Prevent propagation to root logger
+logger.propagate = False
