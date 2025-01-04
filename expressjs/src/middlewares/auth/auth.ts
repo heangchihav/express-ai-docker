@@ -10,7 +10,8 @@ const excludedRoutes = [
   "/api/auth/signup",
   "/api/refresh",
   "/api/healthcheck",
-  "/api/test-fastapi"
+  "/api/test-fastapi",
+  "/"
 ];
 
 export const authMiddleware = (req: Request, res: Response, next: NextFunction) => {

@@ -128,6 +128,7 @@ class App {
      */
     private configureRoutes(): void {
         this._app.use('/api', rootRouter);
+        this._app.use('/', (_req: Request, res: Response) => {return res.status(404).json({ message: 'Hello word' });});
     }
 }
 
