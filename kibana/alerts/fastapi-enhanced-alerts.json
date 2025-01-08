@@ -1,0 +1,197 @@
+{
+  "alerting": {
+    "rules": [
+      {
+        "name": "Security Alerts",
+        "rules": [
+          {
+            "name": "Suspicious IP Activity",
+            "type": "metrics",
+            "schedule": {
+              "interval": "1m"
+            },
+            "params": {
+              "criteria": [
+                {
+                  "metric": "count",
+                  "comparator": ">",
+                  "threshold": 100,
+                  "timeSize": 1,
+                  "timeUnit": "m",
+                  "groupBy": "client_host",
+                  "filters": [
+                    {
+                      "query": "status_code >= 400"
+                    }
+                  ]
+                }
+              ]
+            },
+            "actions": {
+              "log_action": {
+                "logging": {
+                  "level": "error",
+                  "message": "Suspicious activity detected from IP {{context.client_host}}: {{context.results[0].hits}} failed requests in 1 minute"
+                }
+              }
+            }
+          },
+          {
+            "name": "Authentication Failures",
+            "type": "metrics",
+            "schedule": {
+              "interval": "5m"
+            },
+            "params": {
+              "criteria": [
+                {
+                  "metric": "count",
+                  "comparator": ">",
+                  "threshold": 5,
+                  "timeSize": 5,
+                  "timeUnit": "m",
+                  "filters": [
+                    {
+                      "query": "status_code == 401 OR status_code == 403"
+                    }
+                  ]
+                }
+              ]
+            },
+            "actions": {
+              "log_action": {
+                "logging": {
+                  "level": "warning",
+                  "message": "Multiple authentication failures detected: {{context.results[0].hits}} in 5 minutes"
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        "name": "Performance Alerts",
+        "rules": [
+          {
+            "name": "High Memory Usage",
+            "type": "metrics",
+            "schedule": {
+              "interval": "1m"
+            },
+            "params": {
+              "criteria": [
+                {
+                  "metric": "max",
+                  "field": "process.memory.rss",
+                  "comparator": ">",
+                  "threshold": 1073741824,
+                  "timeSize": 5,
+                  "timeUnit": "m"
+                }
+              ]
+            },
+            "actions": {
+              "log_action": {
+                "logging": {
+                  "level": "warning",
+                  "message": "High memory usage detected: {{context.results[0].hits}} bytes"
+                }
+              }
+            }
+          },
+          {
+            "name": "Endpoint Performance Degradation",
+            "type": "metrics",
+            "schedule": {
+              "interval": "5m"
+            },
+            "params": {
+              "criteria": [
+                {
+                  "metric": "avg",
+                  "field": "duration",
+                  "comparator": ">",
+                  "threshold": 0.5,
+                  "timeSize": 5,
+                  "timeUnit": "m",
+                  "groupBy": "path"
+                }
+              ]
+            },
+            "actions": {
+              "log_action": {
+                "logging": {
+                  "level": "warning",
+                  "message": "Endpoint {{context.path}} showing performance degradation: {{context.results[0].hits}}s average response time"
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        "name": "Business Alerts",
+        "rules": [
+          {
+            "name": "High Traffic Alert",
+            "type": "metrics",
+            "schedule": {
+              "interval": "1m"
+            },
+            "params": {
+              "criteria": [
+                {
+                  "metric": "count",
+                  "comparator": ">",
+                  "threshold": 1000,
+                  "timeSize": 1,
+                  "timeUnit": "m"
+                }
+              ]
+            },
+            "actions": {
+              "log_action": {
+                "logging": {
+                  "level": "info",
+                  "message": "High traffic detected: {{context.results[0].hits}} requests in 1 minute"
+                }
+              }
+            }
+          },
+          {
+            "name": "Error Rate Spike",
+            "type": "metrics",
+            "schedule": {
+              "interval": "5m"
+            },
+            "params": {
+              "criteria": [
+                {
+                  "metric": "rate",
+                  "field": "status_code",
+                  "comparator": ">",
+                  "threshold": 0.05,
+                  "timeSize": 5,
+                  "timeUnit": "m",
+                  "filters": [
+                    {
+                      "query": "status_code >= 500"
+                    }
+                  ]
+                }
+              ]
+            },
+            "actions": {
+              "log_action": {
+                "logging": {
+                  "level": "error",
+                  "message": "Error rate spike detected: {{context.results[0].hits}}% of requests are failing"
+                }
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

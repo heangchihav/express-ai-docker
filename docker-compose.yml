@@ -62,11 +62,11 @@ services:
       
   fastapi:
     build: 
-      context: ./fastAPI
+      context: ./fastapi
       dockerfile: Dockerfile 
     container_name: fastapi_service
     volumes:
-      - ./fastAPI/logs:/app/logs  # Map logs directory to host
+      - ./fastapi/logs:/app/logs  # Map logs directory to host
     ports:
       - "8000:8000"
     environment:
@@ -303,6 +303,9 @@ services:
     volumes:
       - certs:/usr/share/kibana/config/certs
       - kibanadata:/usr/share/kibana/data
+      - ./kibana/dashboards:/usr/share/kibana/config/dashboards
+      - ./kibana/alerts:/usr/share/kibana/config/alerts
+      - ./kibana/reports:/usr/share/kibana/config/reports
     ports:
       - ${KIBANA_PORT}:5601
     environment:
@@ -358,7 +361,7 @@ services:
     container_name: filebeat
     user: root
     volumes:
-      - ./fastAPI/logs:/app/fastAPI/logs:ro
+      - ./fastapi/logs:/app/fastapi/logs:ro
       - ./filebeat/data:/usr/share/filebeat/data
       - ./filebeat/logs:/usr/share/filebeat/logs
       - certs:/usr/share/filebeat/certs:ro

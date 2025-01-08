@@ -1,0 +1,60 @@
+{
+  "reporting": {
+    "schedules": [
+      {
+        "name": "Daily Performance Report",
+        "schedule": {
+          "cron": "0 0 * * *"
+        },
+        "report": {
+          "dashboardId": "fastapi-performance",
+          "type": "pdf",
+          "title": "FastAPI Daily Performance Report",
+          "header": "Performance Metrics for {{date}}",
+          "footer": "Generated automatically by Kibana Reporting"
+        },
+        "delivery": {
+          "type": "email",
+          "recipients": ["your-email@example.com"],
+          "subject": "Daily FastAPI Performance Report - {{date}}"
+        }
+      },
+      {
+        "name": "Weekly Business Analytics",
+        "schedule": {
+          "cron": "0 0 * * 0"
+        },
+        "report": {
+          "dashboardId": "fastapi-business",
+          "type": "pdf",
+          "title": "FastAPI Weekly Business Analytics",
+          "header": "Business Metrics for Week of {{date}}",
+          "footer": "Generated automatically by Kibana Reporting"
+        },
+        "delivery": {
+          "type": "email",
+          "recipients": ["your-email@example.com"],
+          "subject": "Weekly FastAPI Business Analytics - {{date}}"
+        }
+      },
+      {
+        "name": "Monthly Security Summary",
+        "schedule": {
+          "cron": "0 0 1 * *"
+        },
+        "report": {
+          "dashboardId": "fastapi-security",
+          "type": "pdf",
+          "title": "FastAPI Monthly Security Report",
+          "header": "Security Analysis for {{date}}",
+          "footer": "Generated automatically by Kibana Reporting"
+        },
+        "delivery": {
+          "type": "email",
+          "recipients": ["your-email@example.com"],
+          "subject": "Monthly FastAPI Security Report - {{date}}"
+        }
+      }
+    ]
+  }
+}

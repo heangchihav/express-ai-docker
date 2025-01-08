@@ -1,0 +1,84 @@
+{
+  "notification_settings": {
+    "channels": {
+      "email": {
+        "enabled": true,
+        "settings": {
+          "host": "smtp.example.com",
+          "port": 587,
+          "secure": true,
+          "auth": {
+            "user": "your-email@example.com",
+            "pass": "{{ EMAIL_PASSWORD }}"
+          },
+          "recipients": {
+            "critical": ["oncall@example.com", "devops@example.com"],
+            "warning": ["developers@example.com"],
+            "info": ["monitoring@example.com"]
+          }
+        }
+      },
+      "slack": {
+        "enabled": true,
+        "settings": {
+          "webhook_url": "{{ SLACK_WEBHOOK_URL }}",
+          "channels": {
+            "critical": "#fastapi-critical",
+            "warning": "#fastapi-warnings",
+            "info": "#fastapi-info"
+          }
+        }
+      },
+      "pagerduty": {
+        "enabled": true,
+        "settings": {
+          "api_key": "{{ PAGERDUTY_API_KEY }}",
+          "service_id": "{{ PAGERDUTY_SERVICE_ID }}",
+          "severity_mapping": {
+            "critical": "P1",
+            "warning": "P2",
+            "info": "P3"
+          }
+        }
+      }
+    },
+    "notification_rules": [
+      {
+        "name": "Critical Security Alerts",
+        "conditions": {
+          "alert_type": "security",
+          "severity": "critical"
+        },
+        "channels": ["email", "slack", "pagerduty"],
+        "throttle": {
+          "duration": "5m",
+          "max_alerts": 5
+        }
+      },
+      {
+        "name": "Performance Warnings",
+        "conditions": {
+          "alert_type": "performance",
+          "severity": "warning"
+        },
+        "channels": ["email", "slack"],
+        "throttle": {
+          "duration": "15m",
+          "max_alerts": 10
+        }
+      },
+      {
+        "name": "Business Metrics",
+        "conditions": {
+          "alert_type": "business",
+          "severity": "info"
+        },
+        "channels": ["email", "slack"],
+        "throttle": {
+          "duration": "1h",
+          "max_alerts": 20
+        }
+      }
+    ]
+  }
+}

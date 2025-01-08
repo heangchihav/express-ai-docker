@@ -2,7 +2,7 @@ filebeat.inputs:
   - type: log
     enabled: true
     paths:
-      - /app/fastAPI/logs/*.log  # Path to FastAPI logs
+      - /app/fastapi/logs/*.log  # Path to FastAPI logs
     exclude_files: ['\.gz$', '\.tmp$']  # Exclude rotated or temp files
     fields:
       service: fastapi-app
@@ -16,10 +16,6 @@ processors:
   - add_host_metadata: ~         # Enrich logs with host metadata
   - add_cloud_metadata: ~        # Enrich logs with cloud metadata (if applicable)
   - add_docker_metadata: ~       # Enrich logs with Docker metadata (if applicable)
-  - decode_json_fields:
-      fields: ["message"]
-      target: ""
-      overwrite_keys: true
 
 output.logstash:
   hosts: ["logstash:5044"]        # Send logs to Logstash
@@ -45,6 +41,3 @@ logging:
     name: filebeat
     keepfiles: 7
     permissions: 0644
-
-setup.ilm.enabled: false
-setup.template.enabled: false

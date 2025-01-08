@@ -1,0 +1,64 @@
+{
+  "alerting": {
+    "rules": [
+      {
+        "name": "High Error Rate Alert",
+        "type": "metrics",
+        "schedule": {
+          "interval": "1m"
+        },
+        "params": {
+          "criteria": [
+            {
+              "metric": "count",
+              "comparator": ">",
+              "threshold": 10,
+              "timeSize": 5,
+              "timeUnit": "m",
+              "filters": [
+                {
+                  "query": "status_code >= 500"
+                }
+              ]
+            }
+          ]
+        },
+        "actions": {
+          "log_action": {
+            "logging": {
+              "level": "error",
+              "message": "High error rate detected: {{context.results[0].hits}} errors in the last 5 minutes"
+            }
+          }
+        }
+      },
+      {
+        "name": "Slow Response Time Alert",
+        "type": "metrics",
+        "schedule": {
+          "interval": "1m"
+        },
+        "params": {
+          "criteria": [
+            {
+              "metric": "avg",
+              "field": "duration",
+              "comparator": ">",
+              "threshold": 1.0,
+              "timeSize": 5,
+              "timeUnit": "m"
+            }
+          ]
+        },
+        "actions": {
+          "log_action": {
+            "logging": {
+              "level": "warning",
+              "message": "Slow response times detected: Average response time is {{context.results[0].hits}}s in the last 5 minutes"
+            }
+          }
+        }
+      }
+    ]
+  }
+}

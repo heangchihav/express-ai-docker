@@ -1,0 +1,168 @@
+{
+  "report_templates": {
+    "executive_summary": {
+      "name": "Executive Summary Report",
+      "template": {
+        "sections": [
+          {
+            "title": "System Overview",
+            "metrics": [
+              "total_requests",
+              "error_rate",
+              "avg_response_time",
+              "active_users"
+            ],
+            "charts": [
+              "traffic_trend",
+              "error_distribution"
+            ]
+          },
+          {
+            "title": "Performance Insights",
+            "metrics": [
+              "p95_response_time",
+              "slow_endpoints",
+              "resource_usage"
+            ],
+            "charts": [
+              "performance_trend",
+              "resource_utilization"
+            ]
+          },
+          {
+            "title": "Security Summary",
+            "metrics": [
+              "security_incidents",
+              "failed_auth",
+              "suspicious_ips"
+            ],
+            "charts": [
+              "security_events",
+              "threat_map"
+            ]
+          }
+        ],
+        "formatting": {
+          "header": {
+            "logo": "company_logo.png",
+            "title": "FastAPI Application Status Report",
+            "subtitle": "Period: {{start_date}} to {{end_date}}"
+          },
+          "footer": {
+            "page_numbers": true,
+            "timestamp": true,
+            "confidentiality": "Confidential"
+          }
+        }
+      }
+    },
+    "technical_report": {
+      "name": "Technical Performance Report",
+      "template": {
+        "sections": [
+          {
+            "title": "API Performance",
+            "metrics": [
+              "endpoint_latency",
+              "throughput",
+              "error_details"
+            ],
+            "charts": [
+              "latency_distribution",
+              "endpoint_usage"
+            ]
+          },
+          {
+            "title": "System Resources",
+            "metrics": [
+              "cpu_usage",
+              "memory_usage",
+              "disk_io"
+            ],
+            "charts": [
+              "resource_timeline",
+              "bottleneck_analysis"
+            ]
+          },
+          {
+            "title": "Database Performance",
+            "metrics": [
+              "query_time",
+              "connection_pool",
+              "cache_hits"
+            ],
+            "charts": [
+              "query_performance",
+              "cache_effectiveness"
+            ]
+          }
+        ],
+        "formatting": {
+          "header": {
+            "title": "FastAPI Technical Performance Report",
+            "subtitle": "Detailed Analysis for {{date}}"
+          },
+          "footer": {
+            "page_numbers": true,
+            "timestamp": true,
+            "generated_by": "Kibana Reporting System"
+          }
+        }
+      }
+    },
+    "security_audit": {
+      "name": "Security Audit Report",
+      "template": {
+        "sections": [
+          {
+            "title": "Security Overview",
+            "metrics": [
+              "security_score",
+              "incident_count",
+              "vulnerability_stats"
+            ],
+            "charts": [
+              "security_trend",
+              "threat_distribution"
+            ]
+          },
+          {
+            "title": "Authentication Analysis",
+            "metrics": [
+              "auth_failures",
+              "session_stats",
+              "token_usage"
+            ],
+            "charts": [
+              "auth_patterns",
+              "session_timeline"
+            ]
+          },
+          {
+            "title": "Threat Detection",
+            "metrics": [
+              "blocked_ips",
+              "attack_vectors",
+              "rate_limit_hits"
+            ],
+            "charts": [
+              "attack_map",
+              "threat_timeline"
+            ]
+          }
+        ],
+        "formatting": {
+          "header": {
+            "title": "FastAPI Security Audit Report",
+            "subtitle": "Security Analysis for {{month}} {{year}}"
+          },
+          "footer": {
+            "page_numbers": true,
+            "timestamp": true,
+            "classification": "Confidential"
+          }
+        }
+      }
+    }
+  }
+}
