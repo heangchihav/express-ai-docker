@@ -4,7 +4,7 @@ xpack.monitoring.elasticsearch.hosts:
 - https://es01:9200
 - https://es02:9200
 - https://es03:9200
-xpack.monitoring.elasticsearch.password: changeme
+xpack.monitoring.elasticsearch.password: ${ELASTIC_PASSWORD}
 xpack.monitoring.elasticsearch.ssl.certificate_authority: /usr/share/logstash/config/certs/ca/ca.crt
 xpack.monitoring.elasticsearch.username: elastic
 xpack.monitoring.enabled: false
