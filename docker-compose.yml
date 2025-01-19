@@ -175,10 +175,12 @@ services:
       setup:
         condition: service_healthy
     image: docker.elastic.co/elasticsearch/elasticsearch:${STACK_VERSION}
-    networks:
-      - app_network
     labels:
       co.elastic.logs/module: elasticsearch
+    networks:
+      app_network:
+        aliases:
+          - es01
     volumes:
       - certs:/usr/share/elasticsearch/config/certs
       - esdata01:/usr/share/elasticsearch/data
@@ -188,7 +190,7 @@ services:
       - node.name=es01
       - cluster.name=${CLUSTER_NAME}
       - cluster.initial_master_nodes=es01,es02,es03
-      - discovery.seed_hosts=es02,es03
+      - discovery.seed_hosts=es02:9300,es03:9300
       - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
       - bootstrap.memory_lock=true
       - xpack.security.enabled=true
@@ -225,10 +227,12 @@ services:
       es01:
         condition: service_healthy
     image: docker.elastic.co/elasticsearch/elasticsearch:${STACK_VERSION}
-    networks:
-      - app_network
     labels:
       co.elastic.logs/module: elasticsearch
+    networks:
+      app_network:
+        aliases:
+          - es02
     volumes:
       - certs:/usr/share/elasticsearch/config/certs
       - esdata02:/usr/share/elasticsearch/data
@@ -238,7 +242,7 @@ services:
       - node.name=es02
       - cluster.name=${CLUSTER_NAME}
       - cluster.initial_master_nodes=es01,es02,es03
-      - discovery.seed_hosts=es01,es03
+      - discovery.seed_hosts=es01:9300,es03:9300
       - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
       - bootstrap.memory_lock=true
       - xpack.security.enabled=true
@@ -275,10 +279,12 @@ services:
       es02:
         condition: service_healthy
     image: docker.elastic.co/elasticsearch/elasticsearch:${STACK_VERSION}
-    networks:
-      - app_network
     labels:
       co.elastic.logs/module: elasticsearch
+    networks:
+      app_network:
+        aliases:
+          - es03
     volumes:
       - certs:/usr/share/elasticsearch/config/certs
       - esdata03:/usr/share/elasticsearch/data
@@ -288,7 +294,7 @@ services:
       - node.name=es03
       - cluster.name=${CLUSTER_NAME}
       - cluster.initial_master_nodes=es01,es02,es03
-      - discovery.seed_hosts=es01,es02
+      - discovery.seed_hosts=es01:9300,es02:9300
       - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
       - bootstrap.memory_lock=true
       - xpack.security.enabled=true
