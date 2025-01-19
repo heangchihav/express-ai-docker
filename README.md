@@ -135,3 +135,11 @@ For mobile devices, include both `accessToken` and `refreshToken` with each requ
 **How to run prisma** 
 Docker-compose exec expressjs npx prisma db push
 Docker-compose exec expressjs npx prisma studio
+
+---
+
+The error code 78 in Elasticsearch typically indicates that the system's virtual memory settings are not configured correctly for Elasticsearch to run. This is a common issue with Docker and Elasticsearch.
+
+To fix this, we need to increase the virtual memory settings on your host machine. 
+sysctl -n vm.max_map_count #check current value
+sysctl -w vm.max_map_count=262144 #change value to 262144

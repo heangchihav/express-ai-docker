@@ -14,9 +14,7 @@ volumes:
     driver: local
 
 networks:
-  backend_network:
-    driver: bridge
-  elastic:
+  app_network:
     driver: bridge
 
 services:
@@ -32,7 +30,7 @@ services:
     ports:
       - "5432:5432"
     networks:
-      - backend_network
+      - app_network
 
   expressjs:
     build:
@@ -42,9 +40,10 @@ services:
       DATABASE_URL: ${DATABASE_URL}
       FASTAPI_URL: http://fastapi_service:8000
       REDIS_URL: redis://redis_service:6379
+      NODE_ENV: development
     volumes:
-      - ./expressjs:/app
-      - /app/node_modules
+      - ./expressjs/src:/app/src
+      - ./expressjs/logs:/app/logs
     ports:
       - "3000:3000"
       - "5555:5555"
@@ -53,7 +52,7 @@ services:
       - redis
       - fastapi
     networks:
-      - backend_network
+      - app_network
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
       interval: 30s
@@ -81,8 +80,7 @@ services:
       es01:
         condition: service_healthy
     networks:
-      - backend_network
-      - elastic
+      - app_network
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
       interval: 30s
@@ -95,7 +93,7 @@ services:
     ports:
       - "6379:6379"
     networks:
-      - backend_network
+      - app_network
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -106,7 +104,7 @@ services:
   setup:
     image: docker.elastic.co/elasticsearch/elasticsearch:${STACK_VERSION}
     networks:
-      - elastic
+      - app_network
     volumes:
       - certs:/usr/share/elasticsearch/config/certs
     user: "0"
@@ -178,7 +176,7 @@ services:
         condition: service_healthy
     image: docker.elastic.co/elasticsearch/elasticsearch:${STACK_VERSION}
     networks:
-      - elastic
+      - app_network
     labels:
       co.elastic.logs/module: elasticsearch
     volumes:
@@ -204,6 +202,13 @@ services:
       - xpack.security.transport.ssl.certificate_authorities=certs/ca/ca.crt
       - xpack.security.transport.ssl.verification_mode=certificate
       - xpack.license.self_generated.type=${LICENSE}
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    deploy:
+      resources:
+        limits:
+          memory: 1g
+        reservations:
+          memory: 512m
     mem_limit: ${ES_MEM_LIMIT}
     ulimits:
       memlock:
@@ -221,7 +226,7 @@ services:
         condition: service_healthy
     image: docker.elastic.co/elasticsearch/elasticsearch:${STACK_VERSION}
     networks:
-      - elastic
+      - app_network
     labels:
       co.elastic.logs/module: elasticsearch
     volumes:
@@ -247,6 +252,13 @@ services:
       - xpack.security.transport.ssl.certificate_authorities=certs/ca/ca.crt
       - xpack.security.transport.ssl.verification_mode=certificate
       - xpack.license.self_generated.type=${LICENSE}
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    deploy:
+      resources:
+        limits:
+          memory: 1g
+        reservations:
+          memory: 512m
     mem_limit: ${ES_MEM_LIMIT}
     ulimits:
       memlock:
@@ -264,7 +276,7 @@ services:
         condition: service_healthy
     image: docker.elastic.co/elasticsearch/elasticsearch:${STACK_VERSION}
     networks:
-      - elastic
+      - app_network
     labels:
       co.elastic.logs/module: elasticsearch
     volumes:
@@ -290,6 +302,13 @@ services:
       - xpack.security.transport.ssl.certificate_authorities=certs/ca/ca.crt
       - xpack.security.transport.ssl.verification_mode=certificate
       - xpack.license.self_generated.type=${LICENSE}
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    deploy:
+      resources:
+        limits:
+          memory: 1g
+        reservations:
+          memory: 512m
     mem_limit: ${ES_MEM_LIMIT}
     ulimits:
       memlock:
@@ -307,7 +326,7 @@ services:
         condition: service_healthy
     image: docker.elastic.co/kibana/kibana:${STACK_VERSION}
     networks:
-      - elastic
+      - app_network
     labels:
       co.elastic.logs/module: kibana
     volumes:
@@ -342,7 +361,7 @@ services:
         condition: service_healthy
     image: docker.elastic.co/logstash/logstash:${STACK_VERSION}
     networks:
-      - elastic
+      - app_network
     labels:
       co.elastic.logs/module: logstash
     user: root
@@ -382,7 +401,7 @@ services:
       - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
       - ENVIRONMENT=${ENVIRONMENT:-production}
     networks:
-      - elastic
+      - app_network
     depends_on:
       es01:
         condition: service_healthy

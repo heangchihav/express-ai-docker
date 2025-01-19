@@ -1,7 +1,7 @@
 FROM node:18-slim
 
-# Install OpenSSL for Prisma
-RUN apt-get update -y && apt-get install -y openssl
+# Install OpenSSL and curl for Prisma and healthcheck
+RUN apt-get update -y && apt-get install -y openssl curl
 
 # Create non-root user
 RUN groupadd -r appuser && useradd -r -g appuser -s /bin/false appuser
@@ -28,7 +28,8 @@ RUN npx prisma generate
 # Set proper permissions
 RUN mkdir -p /app/logs && \
     chown -R appuser:appuser /app && \
-    chmod -R 755 /app/logs
+    chmod -R 755 /app/logs && \
+    chmod -R 755 /app/node_modules
 
 # Use non-root user
 USER appuser
@@ -37,5 +38,5 @@ USER appuser
 HEALTHCHECK --interval=30s --timeout=3s \
   CMD curl -f http://localhost:3000/health || exit 1
 
-# Start the application with ts-node
-CMD ["nodemon", "--exec", "ts-node", "src/server.ts"]
+# Start the application with nodemon
+CMD ["npx", "nodemon", "--exec", "ts-node", "src/server.ts"]
